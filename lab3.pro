@@ -1,4 +1,4 @@
-PRO file_orgy, nSamp, picoArgs, fiOAleTag, correction = nFile
+PRO file_orgy, nSamp, voltThreshold, picoArgs, fileTag, correction = nFile
 ;+
 ; OVERVIEW
 ; --------
@@ -8,7 +8,7 @@ PRO file_orgy, nSamp, picoArgs, fiOAleTag, correction = nFile
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; file_orgy, nSamp, picoArgs, fileTag, correction = nFile
+; file_orgy, nSamp, voltThreshold, picoArgs, fileTag, correction = nFile
 ;
 ; PARAMETERS
 ; ----------
@@ -36,7 +36,6 @@ PRO file_orgy, nSamp, picoArgs, fiOAleTag, correction = nFile
 ;     in nFile
 ;- 
 
-voltThreshold = string(picoArgs[0])+'V'           ; unpack picoArgs to be put into picosampler
 sampInterval = picoArgs[1]
 nSpectra = picoArgs[2]
 duality = picoArgs[3]
@@ -45,17 +44,17 @@ leFreq = 62.5/sampInterval                        ; get sampling frequency
 
 IF N_ELEMENTS(nFile) EQ 0 THEN start=0 ELSE start=nFile   ; check if a correction needs to be made
 
-FOR i=start, nSamp-1 DO BEGIN                     ; recall both start and end indices are inclusive
+FOR i=start, start+nSamp-1 DO BEGIN                     ; recall both start and end indices are inclusive
    filename = picosampler(voltThreshold, sampInterval, nSpectra, dual = duality)   ; call picosampler
    
    timeTag = systime(/JULIAN)                     ; get julian time
    caldat, timeTag, mo, day, yr, hr, min, sec     ; unpack time
    
-   fileButt = string(mo)+string(day)+'_'$ ; get time-marked filename
-              +string(hr)+string(min)+string(leFreq)+'_'$
+   fileButt = string(mo)+string(day)+'_'$         ; get time-marked filename
+              +string(hr)+string(min)+'_'+string(leFreq, format ='(3f0.1)')+'MHz_'$
               +string(i)+'.bin'
-   
-   file_copy, filename, fileTag+'_'+fileButt ; copy and rename file
+   destination= strjoin(STRSPLIT(fileTag+'_'+fileButt, /EXTRACT))
+   file_copy, filename, './data/'+destination      ; copy and rename file
 
 ENDFOR
 
