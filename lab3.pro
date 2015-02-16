@@ -137,29 +137,71 @@ END
 
 PRO power_spec, binArr, sampInterval, specPF
 
-vSamp = 62.5/sampInterval
+;+
+; OVERVIEW
+; --------
+; procedure will take power spectra of input arrays and output plots
+; with proper axes labeled
+;
+; CALLING SEQUENCE
+; ----------------
+; power_spec, binArr, sampInterval, specPF
+;
+; PARAMETERS
+; ----------
+; binArr: array
+;     input array, presumably holds two channel information, so probably
+;     not compatible if used channel_sort
+; sampInterval: int
+;     sample interval given to picosampler. check logfile to find it
+; 
+; OUTPUTS
+; -------
+; specPF: array
+;     the power spectrum of the input array
+;-
 
-N = size(binArr, /N_ELEMENTS)
-NN = N/2
+vSamp = 62.5/sampInterval                      ; get the sampling frequency
 
-realArr = binArr[0:(NN)-1]
-imagArr = binArr[NN:-1]
-compArr = complex(realArr, imagArr)
+N = size(binArr, /N_ELEMENTS)                  ; number of elements in array
+NN = N/2                                       ; obvious
 
-specFT = fft(compArr)
-specPF = (abs(specFT))^2
+realArr = binArr[0:(NN)-1]                     ; get real part of array
+imagArr = binArr[NN:-1]                        ; get complex part of array
+compArr = complex(realArr, imagArr)            ; make one giant mega-complex array
 
-f = (findgen(NN)-(NN/2))*(vSamp)
+specFT = fft(compArr)                          ; take fourier transform of complex array
+specPF = (abs(specFT))^2                       ; take power spectrum
 
-plot, f, shift(specFT, NN), /xstyle
+f = (findgen(NN)-(NN/2))*(vSamp)               ; get frequency axis
+
+maxAmp = float(max(specPF))                    ; get normalization constant
+specPF = specPF/maxAmp                         ; normalize specPF
+
+plot, f, shift(specFT, NN), /xstyle,$          ; make plot
+      title='Power Spectrum', xtitle='Frequency (MHz)',$
+      ytitle='Amplitude'
 
 END
 
 PRO rotten_matrix, LST
+;+
+; OVERVIEW
+; --------
+; procedure will generate the rotation matrix to convert from (HA, DEC)
+; to (RA, DEC)
+;
+; PARAMETERS
+; ----------
+; LST: float
+;     local sidereal time
+;-
 
-leMatrix = make_array(3,3)
+leMatrix = make_array(3,3)                    ; initialize rotation matrix
 
-leMatrix[0,0] = cos(LST)
+; plug relevant values into rotation matrix
+
+leMatrix[0,0] = cos(LST)                      
 leMatrix[0,1] = -1*sin(LST)
 leMatrix[0,2] = 0.
 leMatrix[1,0] = sin(LST)
@@ -170,4 +212,45 @@ leMatrix[2,1] = 0.
 leMatrix[2,2] = 1.
 
 print, leMatrix
+END
+
+PRO smooth_operator, rawArray, coldArray, hotArray, numChan, finalArray
+;+
+; OVERVIEW
+; --------
+; will take the median of one array for smoothing stuff
+;
+; CALLING SEQUENCE
+; smooth_operator, rawArray, finalArray
+;
+; PARAMTERS
+; ---------
+; rawArray: array
+;     should be power spectra from both offline or online
+;     measurements. first index tells which data point, second index
+;     tells if it's offline or online. I prefer online to lead offline
+; coldArray: array
+;     power spectrum of data of the cold unforgiving sky
+; hotArray: array
+;     power spectrum of data from our portable sacks of water
+; numChan: int
+;     number of channels over which you would like the median to be
+;     measured
+;
+; OUTPUTS
+; -------
+; finalArray: array
+;     the output array after it has been smoothed
+;-
+
+onArray = median(rawArray[*,0], numChan)            ; median over online data
+offArray = median(rawArray[*,1], numChan)           ; median over offline data
+scoldArray = median(coldArray, numChan)             ; median over cold data
+shotArray = median(hotArray, numChan)               ; median over hot data
+
+ratio = onArray/offArray
+Tsys = (total(scoldArray)/total(shotArray - scoldArray) )*(300) ; get Tsys, look at pg 6 of lab thing
+
+finalArray = ratio*Tsys
+
 END
