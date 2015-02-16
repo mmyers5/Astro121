@@ -169,4 +169,5 @@ leMatrix[2,0] = 0.
 leMatrix[2,1] = 0.
 leMatrix[2,2] = 1.
 
+print, leMatrix
 END
