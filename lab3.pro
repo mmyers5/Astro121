@@ -254,3 +254,42 @@ Tsys = (total(scoldArray)/total(shotArray - scoldArray) )*(300) ; get Tsys, look
 finalArray = ratio*Tsys
 
 END
+
+PRO cheating_doppler, JT, delF
+;+
+; OVERVIEW
+; --------
+; will calculate the doppler shifted frequency change using a cheaty
+; method
+;
+; CALLING SEQUENCE
+; ----------------
+; cheating_doppler, JT
+;
+; PARAMETERS
+; ----------
+; JT: float
+;     the julian time at which you want this calculated
+;
+; OUTPUTS
+; -------
+; delF: float
+;     the change in frequency due to the doppler shifting!
+
+lati = 37.8717                                    ; latitude of Berkeley
+longi = 122.2728                                  ; longitude of Berkeley
+tz = 8                                            ; time zone of Berkeley
+
+zenpos, JT, ra, dec             ; call cheating procedure
+                                ; it will ask you to input lati, longi,
+                                ; and tz
+
+ra = ra*(180./!pi)*(24/360.)                      ; convert to decimal hours
+dec = dec*(180./!pi)                              ; convert to decimal degrees
+
+vel = ugdoppler(ra, dec, JT)                      ; call doppler shift procedure
+c = 3.e8
+
+delF = -1*(v/c)*(1420.4058)                       ; gives delta f in MHz
+
+END  
