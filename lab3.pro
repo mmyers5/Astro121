@@ -134,3 +134,39 @@ FOR i = 0, nFiles DO BEGIN                   ; loop through every file
 ENDFOR
  
 END
+
+PRO power_spec, binArr, sampInterval, specPF
+
+vSamp = 62.5/sampInterval
+
+N = size(binArr, /N_ELEMENTS)
+NN = N/2
+
+realArr = binArr[0:(NN)-1]
+imagArr = binArr[NN:-1]
+compArr = complex(realArr, imagArr)
+
+specFT = fft(compArr)
+specPF = (abs(specFT))^2
+
+f = (findgen(NN)-(NN/2))*(vSamp)
+
+plot, f, shift(specFT, NN), /xstyle
+
+END
+
+PRO rotten_matrix, LST
+
+leMatrix = make_array(3,3)
+
+leMatrix[0,0] = cos(LST)
+leMatrix[0,1] = -1*sin(LST)
+leMatrix[0,2] = 0.
+leMatrix[1,0] = sin(LST)
+leMatrix[1,1] = cos(LST)
+leMatrix[1,2] = 0.
+leMatrix[2,0] = 0.
+leMatrix[2,1] = 0.
+leMatrix[2,2] = 1.
+
+END
