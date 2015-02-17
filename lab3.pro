@@ -86,7 +86,7 @@ PRO channel_sort, fileTag, nFiles, nSpectra, specArr
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; channel_sort, fileTag, nSpectra, specArr
+; channel_sort, fileTag, nFiles, nSpectra, specArr
 ;
 ; PARAMETERS
 ; ----------
@@ -105,37 +105,39 @@ PRO channel_sort, fileTag, nFiles, nSpectra, specArr
 ; -------
 ; specArr: array
 ;     an array of shape (nChannel, nSpectra). will re-organize things so
-;     that the spectra from channel 1 is in the first column, and
-;     spectra from channel 2 is in the second column (as IDL sees
+;     that the spectra from channel 1 is in the first row, and
+;     spectra from channel 2 is in the second row (as IDL sees
 ;     it). Each row should contain continuous spectra shared by both
 ;     channels.
 ;-
 
 N=long(16000)                                      ; elements for one spectrum for one channel
-numCols = long(N*nSpectra*nFiles)            ; get size of how many sample points there are per channel
-numEls = long(nSpectra*N)                    ; elements for one channel
+numCols = ulong(N*nSpectra*nFiles)            ; get size of how many sample points there are per channel
+numEls = ulong(nSpectra*N)                    ; elements for one channel
 
-specArr = make_array(numCols, 2, /INTEGER)
+specArr = make_array(numCols, 2, /ULONG)
 
-FOR i = 0, nFiles DO BEGIN                   ; loop through every file
-   startInd = i*(numEls)                     ; get starting index of binary array
+FOR i = 0, (nFiles-1) DO BEGIN                 ; loop through every file
+   
+   startInd = i*(numEls)          ; get starting index of binary array
    endInd = startInd + (numEls-1)       ; get ending index of binary array
 
    j = string(i, format='(I02)')             ; get file number to be two digits
-   filename = './'+fileTag+'_'+j+'.bin' ; put filename together
+   filename = './data/'+fileTag+'_'+j+'.bin' ; put filename together
    
    binArr = read_binary(filename, data_type=2,$
                          data_dims=[numEls,2])      ; read binary file
                                 ; data_dims puts the first channel 
-                                ; elements in column 1, the next channel
-                                ; elements in column 2
-   specArr[startInd:endInd,*] = binArr     ; do the copy proper
+                                ; elements in row 1, the next channel
+                                ; elements in row 2
+   
+   specArr[startInd:endInd,*] = binArr ; do the copy proper
 
 ENDFOR
  
 END
 
-PRO power_spec, binArr, sampInterval, specPF
+PRO power_spec, realArr, imagArr, sampInterval, specPF
 
 ;+
 ; OVERVIEW
@@ -145,13 +147,14 @@ PRO power_spec, binArr, sampInterval, specPF
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; power_spec, binArr, sampInterval, specPF
+; power_spec, realArr, imagArr, sampInterval, specPF
 ;
 ; PARAMETERS
 ; ----------
-; binArr: array
-;     input array, presumably holds two channel information, so probably
-;     not compatible if used channel_sort
+; realArr: array
+;     input array from channel 1
+; imagArrArr: array
+;     input array from channel 2
 ; sampInterval: int
 ;     sample interval given to picosampler. check logfile to find it
 ; 
@@ -163,22 +166,19 @@ PRO power_spec, binArr, sampInterval, specPF
 
 vSamp = 62.5/sampInterval                      ; get the sampling frequency
 
-N = size(binArr, /N_ELEMENTS)                  ; number of elements in array
-NN = N/2                                       ; obvious
+N = size(realArr, /N_ELEMENTS)                 ; number of elements in each array
 
-realArr = binArr[0:(NN)-1]                     ; get real part of array
-imagArr = binArr[NN:-1]                        ; get complex part of array
 compArr = complex(realArr, imagArr)            ; make one giant mega-complex array
 
 specFT = fft(compArr)                          ; take fourier transform of complex array
 specPF = (abs(specFT))^2                       ; take power spectrum
 
-f = (findgen(NN)-(NN/2))*(vSamp)               ; get frequency axis
+f = (findgen(N)-(N/2))*(vSamp)               ; get frequency axis
 
-maxAmp = float(max(specPF))                    ; get normalization constant
-specPF = specPF/maxAmp                         ; normalize specPF
+;maxAmp = float(max(specPF))                    ; get normalization constant
+;specPF = specPF/maxAmp                         ; normalize specPF
 
-plot, f, shift(specFT, NN), /xstyle,$          ; make plot
+plot, f, shift(specFT, N), /xstyle,$          ; make plot
       title='Power Spectrum', xtitle='Frequency (MHz)',$
       ytitle='Amplitude'
 
@@ -264,7 +264,7 @@ PRO cheating_doppler, JT, delF
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; cheating_doppler, JT
+; cheating_doppler, JT, delF
 ;
 ; PARAMETERS
 ; ----------
