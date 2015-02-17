@@ -76,13 +76,14 @@ ENDFOR
 
 END
 
-PRO channel_sort, fileTag, nFiles, nSpectra, specArr
+PRO channel_sort, fileTag, binArr
 ;+
 ; OVERVIEW
 ; --------
 ; Procedure will re-organize picosampler binary file data if they were taken
 ; with nSpectra > 1. Will read the binary files and output legibly to
-; specArr
+; specArr, or at least it works like that on my computer. heavily
+; simplified to work at lab
 ;
 ; CALLING SEQUENCE
 ; ----------------
@@ -111,43 +112,26 @@ PRO channel_sort, fileTag, nFiles, nSpectra, specArr
 ;     channels.
 ;-
 
-N=long(16000)                                      ; elements for one spectrum for one channel
-numCols = ulong(N*nSpectra*nFiles)            ; get size of how many sample points there are per channel
-numEls = ulong(nSpectra*N)                    ; elements for one channel
-
-specArr = make_array(numCols, 2, /ULONG)
-
-FOR i = 0, (nFiles-1) DO BEGIN                 ; loop through every file
+;N=long(16000)                                      ; elements for one spectrum for one channel
+;numCols = ulong(N*nSpectra*nFiles)            ; get size of how many sample points there are per channel
+;numEls = ulong(nSpectra*N)                    ; elements for one channel
    
-   startInd = i*(numEls)          ; get starting index of binary array
-   endInd = startInd + (numEls-1)       ; get ending index of binary array
-
-   j = string(i, format='(I02)')             ; get file number to be two digits
-   filename = './data/'+fileTag+'_'+j+'.bin' ; put filename together
+filename = './data/'+fileTag+'.bin'              ; put filename together
    
-   binArr = read_binary(filename, data_type=2,$
-                         data_dims=[numEls,2])      ; read binary file
-                                ; data_dims puts the first channel 
-                                ; elements in row 1, the next channel
-                                ; elements in row 2
-   
-   specArr[startInd:endInd,*] = binArr ; do the copy proper
-
-ENDFOR
- 
+binArr = read_binary(filename, data_type=2)      ; read binary file 
 END
 
-PRO power_spec, realArr, imagArr, sampInterval, specPF
+PRO power_spec, realArr, imagArr, specPF
 
 ;+
 ; OVERVIEW
 ; --------
-; procedure will take power spectra of input arrays and output plots
-; with proper axes labeled
+; procedure will take power spectra of input arrays and shift them to be
+; centered accordingly
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; power_spec, realArr, imagArr, sampInterval, specPF
+; power_spec, realArr, imagArr, specPF
 ;
 ; PARAMETERS
 ; ----------
@@ -155,8 +139,6 @@ PRO power_spec, realArr, imagArr, sampInterval, specPF
 ;     input array from channel 1
 ; imagArrArr: array
 ;     input array from channel 2
-; sampInterval: int
-;     sample interval given to picosampler. check logfile to find it
 ; 
 ; OUTPUTS
 ; -------
@@ -164,71 +146,32 @@ PRO power_spec, realArr, imagArr, sampInterval, specPF
 ;     the power spectrum of the input array
 ;-
 
-vSamp = 62.5/sampInterval                      ; get the sampling frequency
-
-N = size(realArr, /N_ELEMENTS)                 ; number of elements in each array
-
 compArr = complex(realArr, imagArr)            ; make one giant mega-complex array
 
 specFT = fft(compArr)                          ; take fourier transform of complex array
+N = size(specFT, /N_ELEMENTS)
+specFT = shift(specFT, N/2)                    ; shift ft to be centered on zero
+
 specPF = (abs(specFT))^2                       ; take power spectrum
 
-f = (findgen(N)-(N/2))*(vSamp)               ; get frequency axis
-
-;maxAmp = float(max(specPF))                    ; get normalization constant
-;specPF = specPF/maxAmp                         ; normalize specPF
-
-plot, f, shift(specFT, N), /xstyle,$          ; make plot
-      title='Power Spectrum', xtitle='Frequency (MHz)',$
-      ytitle='Amplitude'
-
 END
 
-PRO rotten_matrix, LST
+PRO smooth_operator, onArray, offArray, coldArray, hotArray, numChan, finalArray
 ;+
 ; OVERVIEW
 ; --------
-; procedure will generate the rotation matrix to convert from (HA, DEC)
-; to (RA, DEC)
-;
-; PARAMETERS
-; ----------
-; LST: float
-;     local sidereal time
-;-
-
-leMatrix = make_array(3,3)                    ; initialize rotation matrix
-
-; plug relevant values into rotation matrix
-
-leMatrix[0,0] = cos(LST)                      
-leMatrix[0,1] = -1*sin(LST)
-leMatrix[0,2] = 0.
-leMatrix[1,0] = sin(LST)
-leMatrix[1,1] = cos(LST)
-leMatrix[1,2] = 0.
-leMatrix[2,0] = 0.
-leMatrix[2,1] = 0.
-leMatrix[2,2] = 1.
-
-print, leMatrix
-END
-
-PRO smooth_operator, rawArray, coldArray, hotArray, numChan, finalArray
-;+
-; OVERVIEW
-; --------
-; will take the median of one array for smoothing stuff
+; will take the median of arrays for smoothing stuff and put them
+; together to get the final final final array we're looking for
 ;
 ; CALLING SEQUENCE
-; smooth_operator, rawArray, finalArray
+; smooth_operator, onArray, offArray, coldArray, hotArray, numChan, finalArray
 ;
 ; PARAMTERS
 ; ---------
-; rawArray: array
-;     should be power spectra from both offline or online
-;     measurements. first index tells which data point, second index
-;     tells if it's offline or online. I prefer online to lead offline
+; onArray: array
+;     should be power spectrum from online data
+; offArray: array
+;     should be power spectrum from offline data
 ; coldArray: array
 ;     power spectrum of data of the cold unforgiving sky
 ; hotArray: array
@@ -243,15 +186,17 @@ PRO smooth_operator, rawArray, coldArray, hotArray, numChan, finalArray
 ;     the output array after it has been smoothed
 ;-
 
-onArray = median(rawArray[*,0], numChan)            ; median over online data
-offArray = median(rawArray[*,1], numChan)           ; median over offline data
-scoldArray = median(coldArray, numChan)             ; median over cold data
-shotArray = median(hotArray, numChan)               ; median over hot data
+onArray = median(onArray, numChan)            ; median over online data
+offArray = median(offArray, numChan)           ; median over offline data
 
-ratio = onArray/offArray
-Tsys = (total(scoldArray)/total(shotArray - scoldArray) )*(300) ; get Tsys, look at pg 6 of lab thing
+;scoldArray = median(coldArray, numChan)             ; median over cold data
+;shotArray = median(hotArray, numChan)               ; median over hot data
 
-finalArray = ratio*Tsys
+finalArray = onArray/offArray  ;; TEMPORARY
+;ratio = onArray/offArray
+;Tsys = (total(scoldArray)/total(shotArray - scoldArray) )*(300) ; get Tsys, look at pg 6 of lab thing
+
+;finalArray = ratio*Tsys
 
 END
 
