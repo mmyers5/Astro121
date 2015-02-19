@@ -111,19 +111,9 @@ PRO channel_sort, fileTag, nFiles, nSpectra, fileArr
 ; specArr: list
 ;     an array containing one spectrum, the "averaged" spectrum from all
 ;     the spectra you took. be glad.
-;
-; NEED-TO-DO
-; ----------
-; * might want to increase "distance" between medians in case sampling
-; over every spectrum as it is read, and then sampling over every file
-; as it is read, might be too much. consider writing every spectrum to a
-; new binary file?
-; * might want to make procedure more modular by having the smoothing
-; loops on a separate procedure, call times might make the code slower,
-; though
 ;-
 
-N=32000                         ; number of elements per picosampler binary file
+N=ulong(32000)                  ; number of elements per picosampler binary file
 
 FOR i=0, nFiles-1 DO BEGIN      ; loop through every file and get a smooth spectrum from every file   
                                 ; will end up with an array of shape
@@ -134,34 +124,47 @@ FOR i=0, nFiles-1 DO BEGIN      ; loop through every file and get a smooth spect
    filename = './data/'+fileTag+'_'+j+'.bin'   ; put filename together for reading the binary
    
    binArr = read_binary(filename, data_type=2) ; read binary file   
-   bigN = size(binArr, /N_ELEMENTS)            ; the size of the entire array
+   bigN = ulong(size(binArr, /N_ELEMENTS))     ; the size of the entire array
 
    FOR spec=0, nSpectra-1 DO BEGIN             ; smooth over every spectrum
+
       reStart = spec*(N/2)                     ; get the starting point of each spectrum, real
       reEnd = reStart + (N/2)-1                ; ending, real
-      imStart = spec*(N/2)+(bigN/2)            ; starting point of each imaginary spectrum half an array away 
+
+      imStart = reStart + (bigN/2)             ; starting point of each imaginary spectrum half an array away 
       imEnd = imStart + (N/2)-1                ; ending, imaginary
                                                 
       power_spec, binArr[reStart:reEnd],$      ; will get the power spectrum from procedure
-                  binArr[reStart:reEnd],$      ; output in powerArr, shape [(N/2)]
+                  binArr[imStart:imEnd],$      ; output in powerArr, shape [(N/2)]
                   powerArr
       
-      IF spec EQ 0 THEN BEGIN                  ; make array that will smooth over the 4k spectra
+      IF spec EQ 0 THEN BEGIN                  ; make array that will smooth over indiv. spectra
+
          specArr = powerArr                    ; initialize array to first spectrum
+
       ENDIF ELSE BEGIN
-         specArr = [[specArr],[powerArr]]      ; append to specArr, will be of shape [2, (N/2)]
-         specArr = median(specArr,$            ; take median over every data point from each spectrum
-                          DIMENSION=2, /EVEN)  ; resets to shape [(N/2)]   
+
+         specArr = [[specArr],[powerArr]]      ; append to specArr, will be of shape [?, (N/2)]
+
+         IF spec MOD 10 EQ 0 THEN BEGIN         ; for every 5 spectra
+
+            specArr = median(specArr,$ ; take median over every data point from each spectrum
+                             DIMENSION=2, /EVEN) ; resets to shape [(N/2)]   
+         ENDIF
+
       ENDELSE
-   
+
    ENDFOR  
 
    IF i EQ 0 THEN BEGIN
-      fileArr = specArr                       ; initialize array that can hold the arrays from each file
+
+      fileArr = specArr                      ; initialize array that can hold the arrays from each file
+
    ENDIF ELSE BEGIN
+
       fileArr = [ [fileArr],[specArr] ]      ; append to array, files make up rows, shape [2,(N/2)]
-      fileArr = median(fileArr,$             ; take median over each file's spectrum
-                       DIMENSION=2, /EVEN)   ; resets to shape [(N/2)]
+      fileArr = median(fileArr,$             ; get median over every file
+                       DIMENSION=2, /EVEN)
    ENDELSE
 
 ENDFOR   
@@ -236,14 +239,13 @@ PRO smooth_operator, onArray, offArray, coldArray, hotArray, numChan, finalArray
 onArray = median(onArray, numChan)            ; median over online data
 offArray = median(offArray, numChan)           ; median over offline data
 
-;scoldArray = median(coldArray, numChan)             ; median over cold data
-;shotArray = median(hotArray, numChan)               ; median over hot data
+scoldArray = median(coldArray, numChan)             ; median over cold data
+shotArray = median(hotArray, numChan)               ; median over hot data
 
-finalArray = onArray/offArray  ;; TEMPORARY
-;ratio = onArray/offArray
-;Tsys = (total(scoldArray)/total(shotArray - scoldArray) )*(300) ; get Tsys, look at pg 6 of lab thing
+ratio = onArray/offArray
+Tsys = (total(scoldArray)/total(shotArray - scoldArray) )*(300) ; get Tsys, look at pg 6 of lab thing
 
-;finalArray = ratio*Tsys
+finalArray = ratio*Tsys
 
 END
 
