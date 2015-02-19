@@ -146,10 +146,10 @@ FOR i=0, nFiles-1 DO BEGIN      ; loop through every file and get a smooth spect
 
          specArr = [[specArr],[powerArr]]      ; append to specArr, will be of shape [?, (N/2)]
 
-         IF spec MOD 10 EQ 0 THEN BEGIN         ; for every 5 spectra
+         IF spec MOD 100 EQ 0 THEN BEGIN         ; for every 5 spectra
 
             specArr = median(specArr,$ ; take median over every data point from each spectrum
-                             DIMENSION=2, /EVEN) ; resets to shape [(N/2)]   
+                             DIMENSION=2) ; resets to shape [(N/2)]   
          ENDIF
 
       ENDELSE
@@ -164,7 +164,7 @@ FOR i=0, nFiles-1 DO BEGIN      ; loop through every file and get a smooth spect
 
       fileArr = [ [fileArr],[specArr] ]      ; append to array, files make up rows, shape [2,(N/2)]
       fileArr = median(fileArr,$             ; get median over every file
-                       DIMENSION=2, /EVEN)
+                       DIMENSION=2)
    ENDELSE
 
 ENDFOR   
@@ -206,7 +206,7 @@ specPF = (abs(specFT))^2                       ; take power spectrum
 
 END
 
-PRO smooth_operator, onArray, offArray, coldArray, hotArray, numChan, finalArray
+FUNCTION smooth_operator, onArray, offArray, coldArray, hotArray, numChan
 ;+
 ; OVERVIEW
 ; --------
@@ -245,7 +245,7 @@ shotArray = median(hotArray, numChan)               ; median over hot data
 ratio = onArray/offArray
 Tsys = (total(scoldArray)/total(shotArray - scoldArray) )*(300) ; get Tsys, look at pg 6 of lab thing
 
-finalArray = ratio*Tsys
+RETURN, finalArray = ratio*Tsys
 
 END
 
