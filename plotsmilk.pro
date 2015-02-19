@@ -1,4 +1,4 @@
-pro plotsmilk, x_array, y_array, plot_title, x_title, y_title, file_name, x_size, y_size
+pro plotsmilk, x_array, y_array, plot_title, x_title, y_title, file_name, x_size, y_size, xs=xsty, ys=ysty
 
 ;+
 ; OVERVIEW
@@ -41,7 +41,7 @@ pro plotsmilk, x_array, y_array, plot_title, x_title, y_title, file_name, x_size
 
   ps_ch, file_name_full, xsize=x_size, ysize=y_size, /inches
 
-  plot, x_array, y_array, title=plot_title, xtitle=x_title, ytitle=y_title
+  plot, x_array, y_array, title=plot_title, xtitle=x_title, ytitle=y_title, xstyle=xsty, ystyle=ysty
 
   ps_ch, /close
 
