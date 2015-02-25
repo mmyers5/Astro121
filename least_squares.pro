@@ -1,14 +1,14 @@
-PRO fitIt, filePath
-
-  readcol, filePath + '.dat', x0, y0, format = 'F,F'  ; reads columns of data
+PRO fitIt, y0, x0, yBar, sTd, diagXXI, varDC
+  ;readcol, filePath + '.dat', x0, y0, format = 'F,F'  ; reads columns of data
   
   ; x0 = x-values, y0 = y-values
   ; shape (data points, 1)
-
-  N = size(x0)[2]                    ; get nuber of rows, i.e. unknowns
-  M = size(x0)[1]                    ; get number of columns, i.e. data points
+  x0 = findgen(n_elements(y0))
+  N = (size(x0))[2]             ; get nuber of rows, i.e. unknowns
+  M = (size(x0))[1]                  ; get number of columns, i.e. data points
 
   y0 = transpose(y0)                 ; turn y vector into a column vector for matrix ops
+  
   XX = transpose(x0) ## x0           ; get alpha from the handout, xT * x
   XY = transpose(x0) ## y0           ; get beta from the handout, xT * y
   XXI = invert(XX)                   ; invert xT from the handout, xT^(-1)
