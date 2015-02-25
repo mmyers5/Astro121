@@ -76,7 +76,7 @@ ENDFOR
 
 END
 
-PRO channel_sort, fileTag, nFiles, nSpectra, fileArr
+PRO channel_sort, fileTag, nFiles, nSpectra, specArr
 ;+
 ; OVERVIEW
 ; --------
@@ -91,7 +91,7 @@ PRO channel_sort, fileTag, nFiles, nSpectra, fileArr
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; channel_sort, fileTag, nFiles, nSpectra, fileArr
+; channel_sort, fileTag, nFiles, nSpectra, specArr
 ;
 ; PARAMETERS
 ; ----------
@@ -113,11 +113,11 @@ PRO channel_sort, fileTag, nFiles, nSpectra, fileArr
 ;     the spectra you took. be glad.
 ;-
 
+print, 'start: '+systime()
 N=ulong(32000)                  ; number of elements per picosampler binary file
 
 FOR i=0, nFiles-1 DO BEGIN      ; loop through every file and get a smooth spectrum from every file   
-                                ; will end up with an array of shape
-                                ; [(N/2)]
+                                ; will end up with one spectrum
 
    j = string(i, FORMAT='(I02)')               ; get filenumber in proper string format
 
@@ -126,49 +126,39 @@ FOR i=0, nFiles-1 DO BEGIN      ; loop through every file and get a smooth spect
    binArr = read_binary(filename, data_type=2) ; read binary file   
    bigN = ulong(size(binArr, /N_ELEMENTS))     ; the size of the entire array
 
-   FOR spec=0, nSpectra-1 DO BEGIN             ; smooth over every spectrum
+   FOR spec=0, nSpectra-1 DO BEGIN             ; for every spectra in every file
 
-      reStart = spec*(N/2)                     ; get the starting point of each spectrum, real
+      reStart = spec*(N/2)                     ; starting point of each spectrum, real
       reEnd = reStart + (N/2)-1                ; ending, real
 
-      imStart = reStart + (bigN/2)             ; starting point of each imaginary spectrum half an array away 
+      imStart = reStart + (bigN/2)             ; starting point of each imaginary spectrum 
       imEnd = imStart + (N/2)-1                ; ending, imaginary
                                                 
       power_spec, binArr[reStart:reEnd],$      ; will get the power spectrum from procedure
                   binArr[imStart:imEnd],$      ; output in powerArr, shape [(N/2)]
                   powerArr
       
-      IF spec EQ 0 THEN BEGIN                  ; make array that will smooth over indiv. spectra
+      IF specArr EQ !NULL THEN BEGIN           ; check if specarray exists
 
          specArr = powerArr                    ; initialize array to first spectrum
 
       ENDIF ELSE BEGIN
 
-         specArr = [[specArr],[powerArr]]      ; append to specArr, will be of shape [?, (N/2)]
+         specArr = [[specArr],[powerArr]]      ; append to specArr, rows will be diff. spectra
 
-         IF spec MOD 100 EQ 0 THEN BEGIN         ; for every 5 spectra
+         IF spec MOD 500 EQ 0 THEN BEGIN       ; for every 100 spectra
 
-            specArr = median(specArr,$ ; take median over every data point from each spectrum
-                             DIMENSION=2) ; resets to shape [(N/2)]   
+            specArr = median(specArr,$         ; take median over every data point from each spectrum
+                             DIMENSION=2)      ; resets to shape [(N/2)]   
          ENDIF
 
       ENDELSE
 
-   ENDFOR  
+   ENDFOR       ; for loop for every spectrum  
 
-   IF i EQ 0 THEN BEGIN
+ENDFOR          ; for loop for every file
 
-      fileArr = specArr                      ; initialize array that can hold the arrays from each file
-
-   ENDIF ELSE BEGIN
-
-      fileArr = [ [fileArr],[specArr] ]      ; append to array, files make up rows, shape [2,(N/2)]
-      fileArr = median(fileArr,$             ; get median over every file
-                       DIMENSION=2)
-   ENDELSE
-
-ENDFOR   
-
+print, 'end: '+systime()
 END
 
 PRO power_spec, realArr, imagArr, specPF
@@ -206,6 +196,43 @@ specPF = (abs(specFT))^2                       ; take power spectrum
 
 END
 
+PRO smoothies, theArrays, rowCount, numChan, outDid
+;+
+; OVERVIEW
+; --------
+; will take in a list of arrays that you want to be smoothed
+; will be smoothed over every row (second index)
+;
+; CALLING SEQUENCE
+; ----------------
+; smoothies, theArrays, rowCount, numChan, outDid
+;
+; PARAMETERS
+; ----------
+; theArrays: list
+;     the list of arrays. should be 2d, with every row (second
+;     index) being a different array
+; rowCount: integer
+;     the number of rows in theArrays
+; numChan: integer
+;     the number of channels over which you would like your smoothie
+; 
+; OUTPUTS
+; -------
+; outDid: list
+;     the list of output arrays, median'd over
+;-
+
+outDid = theArrays
+
+FOR i =0, rowCount-1 DO BEGIN
+
+   outDid[*,i] = median(theArrays[*,i], numChan)
+
+ENDFOR
+
+END
+
 FUNCTION smooth_operator, onArray, offArray, coldArray, hotArray, numChan
 ;+
 ; OVERVIEW
@@ -214,10 +241,11 @@ FUNCTION smooth_operator, onArray, offArray, coldArray, hotArray, numChan
 ; together to get the final final final array we're looking for
 ;
 ; CALLING SEQUENCE
+; ----------------
 ; smooth_operator, onArray, offArray, coldArray, hotArray, numChan, finalArray
 ;
-; PARAMTERS
-; ---------
+; PARAMETERS
+; ----------
 ; onArray: array
 ;     should be power spectrum from online data
 ; offArray: array

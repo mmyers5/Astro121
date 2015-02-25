@@ -1,10 +1,10 @@
-PRO fitIt, y0, x0, yBar, sTd, diagXXI, varDC
-  ;readcol, filePath + '.dat', x0, y0, format = 'F,F'  ; reads columns of data
+PRO fit_it, y0, x0, yBar, delY, sTd, diagXXI, varDC
   
-  ; x0 = x-values, y0 = y-values
-  ; shape (data points, 1)
-  x0 = findgen(n_elements(y0))
-  N = (size(x0))[2]             ; get nuber of rows, i.e. unknowns
+  numY = n_elements(y0)              ; get the number of elements in the measured values
+  x0Partial = findgen(numY)          ; set the null number for the x matrix
+  x0 = make_it(x0Partial)            ; get the full x-matrix, with the zeroth order term set to 1
+ 
+  N = (size(x0))[2]                  ; get nuber of rows, i.e. unknowns
   M = (size(x0))[1]                  ; get number of columns, i.e. data points
 
   y0 = transpose(y0)                 ; turn y vector into a column vector for matrix ops
@@ -23,5 +23,17 @@ PRO fitIt, y0, x0, yBar, sTd, diagXXI, varDC
   diagXXI = XXI[(N+1) * indgen(N)]   ; get error in yBar
 
   varDC = sTd * diagXXI              ; variances of derived coefficients
+
+END
+
+FUNCTION make_it, n0
+  
+  numN = n_elements(n0)
+  n0Arr = make_array(2, numN, VALUE=1.)
+  FOR i= 0, numN - 1 DO BEGIN
+     n0Arr[1,i] = n0[i]
+  ENDFOR
+  
+  RETURN, n0Arr
 
 END
