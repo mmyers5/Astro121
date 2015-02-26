@@ -54,17 +54,38 @@ PRO fit_it, y0, fitted
 
   varDC = sTd * diagXXI              ; variances of derived coefficients
   
-  fitted = {yBar:yBar, delY:delY, sTd:sTd, diagXXI:diagXXI, varDC:varDC}
+  fitted = {yBar:yBar, delY:delY, sTd:sTd, diagXXI:diagXXI, varDC:varDC} ; struct'ing
 END
 
 FUNCTION make_it, n0
-  
-  numN = n_elements(n0)
-  n0Arr = make_array(2, numN, VALUE=1.)
-  FOR i= 0, numN - 1 DO BEGIN
-     n0Arr[1,i] = n0[i]
+;+
+; OVERVIEW
+; --------
+; will make a column of 1's accompany any array that passes
+; in. use is specific to week 2 of lab 2
+;
+; CALLING SEQUENCE
+; ----------------
+; make_it(n0)
+;
+; PARAMETERS
+; ----------
+; n0: list
+;     the array of unknowns, in this case null points
+;
+; OUTPUTS
+; -------
+; n0Arr: list
+;     the array of unknowns with the column of 1's appended. is
+;     of shape (2, data points)
+;-
+
+  numN = n_elements(n0)                     ; determine how many rows we need
+  n0Arr = make_array(2, numN, VALUE=1.)     ; initialize array of appropriate size
+  FOR i= 0, numN - 1 DO BEGIN               ; loop through every number in n0
+     n0Arr[1,i] = n0[i]                     ; define elements of the array
   ENDFOR
   
-  RETURN, n0Arr
+  RETURN, n0Arr                             ; yippee!
 
 END
