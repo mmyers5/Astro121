@@ -23,11 +23,11 @@ PRO hadec_radec, jDay
   ; initializing values
   caldat, jDay, mo, day, yr, hr, min, sec       ; unpack jday to get local times
   gHr = hr - 8                                  ; get hr to be in gmt time
-  alt = !dtor*(137.60)                          ; we were looking straight up, 90 degrees
-  az = !dtor*(32.43)                            ; arbitrary
+  alt = !dtor*(32.43)                          ; we were looking straight up, 90 degrees
+  az = !dtor*(137.60)                            ; arbitrary
   berkLong = !dtor*(-122.268133)                ; longitude of berkeley in radians
   berkLat = !dtor*(37.875463)                   ; latitude of berkeley in radians
-  
+  berkLat = !dtor*(41.36)  ; test
   solarTime = [gHr*(360./24)]$                  ; convert hrs to degrees
              +[min*(360./24)*(1./60)]$          ; convert minutes to degrees
              +[sec*(360./24)*(1./60)*(1./60)]   ; convert seconds to degrees
@@ -44,9 +44,9 @@ PRO hadec_radec, jDay
                   [0,            -1,            0],$
                   [cos(berkLat),  0, sin(berkLat)] ]
   
-  azAlt = [ [sin(alt)*cos(az)],$           ; get rectangular vector of azimuth and altitude
-            [sin(alt)*sin(az)],$
-            [        cos(alt)] ]
+  azAlt = [ [cos(alt)*cos(az)],$           ; get rectangular vector of azimuth and altitude
+            [cos(alt)*sin(az)],$
+            [        sin(alt)] ]
 
   ; operations
   haDec = azAlt_haDec ## azAlt             ; convert (az,alt) to (ha,dec)
