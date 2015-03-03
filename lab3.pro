@@ -138,24 +138,19 @@ FOR i=0, nFiles-1 DO BEGIN      ; loop through every file and get a smooth spect
                   binArr[imStart:imEnd],$      ; output in powerArr, shape [(N/2)]
                   powerArr
       
-      IF specArr EQ !NULL THEN BEGIN           ; check if specarray exists
+      IF (i EQ 0) AND (spec EQ 0) THEN BEGIN   ; get first storage array
 
          specArr = powerArr                    ; initialize array to first spectrum
 
       ENDIF ELSE BEGIN
-
          specArr = [[specArr],[powerArr]]      ; append to specArr, rows will be diff. spectra
-
-         IF spec MOD 500 EQ 0 THEN BEGIN       ; for every 100 spectra
-
-            specArr = median(specArr,$         ; take median over every data point from each spectrum
-                             DIMENSION=2)      ; resets to shape [(N/2)]   
-         ENDIF
-
       ENDELSE
-
+      
+      IF (spec+1) MOD 100 EQ 0 THEN BEGIN ; for every 100 spectra
+         specArr = median(specArr,$       ; take median over every data point from each spectrum
+                        DIMENSION=2)      ; resets to shape [(N/2)]   
+      ENDIF
    ENDFOR       ; for loop for every spectrum  
-
 ENDFOR          ; for loop for every file
 
 print, 'end: '+systime()
@@ -189,7 +184,7 @@ PRO power_spec, realArr, imagArr, specPF
 compArr = complex(realArr, imagArr)            ; make one giant mega-complex array
 
 specFT = fft(compArr)                          ; take fourier transform of complex array
-N = size(specFT, /N_ELEMENTS)
+N = N_ELEMENTS(specFT)
 specFT = shift(specFT, N/2)                    ; shift ft to be centered on zero
 
 specPF = (abs(specFT))^2                       ; take power spectrum
@@ -201,7 +196,8 @@ PRO smoothies, theArrays, rowCount, numChan, outDid
 ; OVERVIEW
 ; --------
 ; will take in a list of arrays that you want to be smoothed
-; will be smoothed over every row (second index)
+; will be smoothed over every row (second index), can only smooth all
+; arrays by one parameter for now
 ;
 ; CALLING SEQUENCE
 ; ----------------
@@ -233,7 +229,7 @@ ENDFOR
 
 END
 
-FUNCTION smooth_operator, onArray, offArray, coldArray, hotArray, numChan
+FUNCTION smooth_operator, onArray, offArray, coldArray, hotArray, numChan, numChan2
 ;+
 ; OVERVIEW
 ; --------
@@ -242,7 +238,7 @@ FUNCTION smooth_operator, onArray, offArray, coldArray, hotArray, numChan
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; smooth_operator, onArray, offArray, coldArray, hotArray, numChan, finalArray
+; smooth_operator, onArray, offArray, coldArray, hotArray, numChan, numChan2
 ;
 ; PARAMETERS
 ; ----------
@@ -256,7 +252,10 @@ FUNCTION smooth_operator, onArray, offArray, coldArray, hotArray, numChan
 ;     power spectrum of data from our portable sacks of water
 ; numChan: int
 ;     number of channels over which you would like the median to be
-;     measured
+;     measured for the online and offline spectra
+; numChan2: int
+;     number of channels over which you would like the median to be 
+;     measured for the hot and cold spectra
 ;
 ; OUTPUTS
 ; -------
@@ -267,8 +266,8 @@ FUNCTION smooth_operator, onArray, offArray, coldArray, hotArray, numChan
 onArray = median(onArray, numChan)            ; median over online data
 offArray = median(offArray, numChan)           ; median over offline data
 
-scoldArray = median(coldArray, numChan)             ; median over cold data
-shotArray = median(hotArray, numChan)               ; median over hot data
+scoldArray = median(coldArray, numChan2)             ; median over cold data
+shotArray = median(hotArray, numChan2)               ; median over hot data
 
 ratio = onArray/offArray
 Tsys = (total(scoldArray)/total(shotArray - scoldArray) )*(300) ; get Tsys, look at pg 6 of lab thing
