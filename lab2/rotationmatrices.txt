@@ -1,0 +1,32 @@
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{c |c c c|}
+  & cos(LST) & sin(LST) & 0 \\
+  $R_{(\alpha,\delta)-->(ha,\delta),1}$ = & -sin(LST) & cos(LST) & 0 \\
+  & 0 & 0 & 1 \\
+\end{tabular}
+\end{center}
+\end{table}
+
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{c |c c c|}
+  & cos(LST) & sin(LST) & 0 \\
+  $R_{(\alpha,\delta)-->(ha,\delta)}$ = & sin(LST) & -cos(LST) & 0 \\
+  & 0 & 0 & 1 \\
+\end{tabular}
+\end{center}
+\end{table}
+
+
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{c |c c c|}
+  & -0.054876 & -0.873437 & -0.483835 \\
+  $R_{(\alpha,\delta)2000-->(l,b)}$ = & 0.494109 & -0.444830 & 0.746982
+  \\
+  & -0.867666 & -0.198076 & 0.455984 \\
+\end{tabular}
+\end{center}
+\end{table}
