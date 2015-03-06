@@ -67,7 +67,7 @@ PRO time_bod, ra, dec, jDay
   oneHour = 0.0416667    ; one hour in day units
   altArr = []            ; initialize a null array to hold data
   FOR t = jDay, endTime, oneHour DO BEGIN  ; for every hour in the jday
-     alt = (track_bod(ra, dec, t))[1]      ; get altitude from function above
+     alt = (find_bod(ra, dec, t))[1]      ; get altitude from function above
      CALDAT, t, mo, day, yr, hr, min, sec
      altArr = [ [altArr],[hr,alt] ]        ; append to data array
   ENDFOR
