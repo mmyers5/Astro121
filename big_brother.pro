@@ -1,4 +1,4 @@
-FUNCTION track_bod, ra, dec, jDay
+FUNCTION find_bod, ra, dec, jDay
 ;+
 ; OVERVIEW
 ; --------
@@ -45,7 +45,7 @@ FUNCTION track_bod, ra, dec, jDay
   RETURN, azAlt
 END
 
-PRO give_time, ra, dec, jDay
+PRO time_bod, ra, dec, jDay
 ;+
 ; OVERVIEW
 ; --------
@@ -64,18 +64,14 @@ PRO give_time, ra, dec, jDay
 ;-
 
   endTime = jDay + 1     ; add a full day to julian day
-  oneHour = 0.0416667    ; how much to add to jDay to increment by one hour
-
+  oneHour = 0.0416667    ; one hour in day units
+  altArr = []            ; initialize a null array to hold data
   FOR t = jDay, endTime, oneHour DO BEGIN  ; for every hour in the jday
      alt = (track_bod(ra, dec, t))[1]      ; get altitude from function above
      CALDAT, t, mo, day, yr, hr, min, sec
-     IF t EQ jDAY THEN BEGIN
-        altArr = [hr, alt]                 ; initialize array
-     ENDIF ELSE BEGIN
-        altArr = [ [altArr],[hr, alt] ]    ; append to array
-     ENDELSE
+     altArr = [ [altArr],[hr,alt] ]        ; append to data array
   ENDFOR
-
+  ; plot altitude vs hr
   plot, altArr[0,*], altArr[1,*], yrange = [-0.174533, !pi/2],$
         title='Altitude of Stellar Body in Time',$
         xtitle='Time (hrs)', ytitle='Altitude (rad)',$
