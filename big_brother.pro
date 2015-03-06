@@ -9,9 +9,9 @@ FUNCTION track_bod, ra, dec, jDay
 ; PARAMETERS
 ; ----------
 ; ra: float
-;     the right ascension given in radians
+;     the right ascension in 2000 equinox given in radians
 ; dec: float
-;     the declination given in radians
+;     the declination in 2000 equinox given in radians
 ; jDay: float
 ;     the julian day given in...days
 ;
@@ -24,7 +24,7 @@ FUNCTION track_bod, ra, dec, jDay
 
   LST = ilst(juldate=jDay)           ; get local sidereal time in hr decimal
   LST = LST*(15.)*(!pi/180.) ; convert hr decimal to radians
-  bLat = !dtor*(37.8732)     ; our latitude in degrees
+  bLat = !dtor*(37.8732)     ; our latitude in radians
   precess, ra, dec, 2000, 2015, /radian  ; precess coordinates
 
   raDec = [ [cos(dec)*cos(ra)],$  ; vectorize (ra,dec)
@@ -44,3 +44,42 @@ FUNCTION track_bod, ra, dec, jDay
   azAlt = [[az],[alt]]           ; put together in tuple form
   RETURN, azAlt
 END
+
+PRO give_time, ra, dec, jDay
+;+
+; OVERVIEW
+; --------
+; will give a 24 hour idea of where the stellar body will be in terms of
+; altitude. result is a plot of altitude versus time in hours
+;
+; PARAMETERS
+; ----------
+; ra: float
+;     the right ascension in 2000 equinox given in radians
+; dec: float
+;     the declination in 2000 equinox given in radians
+; jDay: float
+;     will increment this over 24 hours to give a picture of the
+;     altitude of stellar body
+;-
+
+  endTime = jDay + 1     ; add a full day to julian day
+  oneHour = 0.0416667    ; how much to add to jDay to increment by one hour
+
+  FOR t = jDay, endTime, oneHour DO BEGIN  ; for every hour in the jday
+     alt = (track_bod(ra, dec, t))[1]      ; get altitude from function above
+     CALDAT, t, mo, day, yr, hr, min, sec
+     IF t EQ jDAY THEN BEGIN
+        altArr = [hr, alt]                 ; initialize array
+     ENDIF ELSE BEGIN
+        altArr = [ [altArr],[hr, alt] ]    ; append to array
+     ENDELSE
+  ENDFOR
+
+  plot, altArr[0,*], altArr[1,*], yrange = [-0.174533, !pi/2],$
+        title='Altitude of Stellar Body in Time',$
+        xtitle='Time (hrs)', ytitle='Altitude (rad)',$
+        /xstyle, /ystyle
+END
+     
+       
