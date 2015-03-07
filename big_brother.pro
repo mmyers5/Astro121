@@ -1,3 +1,35 @@
+PRO show_me_the_money, saveFile, endTime
+;+
+; OVERVIEW
+; --------
+; will point the telescope to the object every twenty seconds. will
+; also "re-calibrate" the system with homer every hour. will be glorious
+;
+; PARAMTERS
+; ---------
+; saveFile: string
+;     the full filename of the save file where ra and dec are stored as
+;     variables
+; endTime: float
+;     when you want the observation to end in julian days
+;-
+  restore, saveFile    ; get the ra and dec from a save file
+  homer                ; calibrate for the first time
+  i = 0                ; number of times had to wait 20 seconds
+  WHILE systime(/julian, /utc) LT endTime DO BEGIN
+     azAlt = find_bod(ra, dec, systime(/julian,/utc)) ; get instantaneous (az,alt)
+     azAlt = !radeg*azAlt            ; convert (az,alt) to degrees
+     azAlt[0] = azAlt[0]+360.        ; random correction
+     result = point2(az=azAlt[0],alt=azAlt[1]) ; point telescopes
+     WAIT, 20                        ; wait 20 seconds
+     i+=1                            ; increment number by 1, i = 1+i
+     IF i MOD 180 EQ 0 THEN BEGIN    ; every 3600 seconds
+        homer                        ; re-calibrate telescope to 0
+     ENDIF
+     print, 'I live!'
+  ENDWHILE
+END
+
 FUNCTION find_bod, ra, dec, jDay
 ;+
 ; OVERVIEW
@@ -39,10 +71,10 @@ FUNCTION find_bod, ra, dec, jDay
                   [ cos(bLat),  0, sin(bLat)] ]
   haDec = raDec_haDec ## raDec   ; rotate (ra,dec)-->(ha,dec)
   azAlt = haDec_azAlt ## haDec   ; rotate (ha,dec)-->(az,alt)
-  az = atan(azAlt[1],azAlt[0])   ; get right ascension in radians
-  alt = asin(azAlt[2])                ; get declination in radians
+  az = atan(azAlt[1],azAlt[0])   ; get azimuth in radians
+  alt = asin(azAlt[2])           ; get altitude in radians
   azAlt = [[az],[alt]]           ; put together in tuple form
-  RETURN, azAlt
+  RETURN, azAlt                  ; return (az,alt) in radians
 END
 
 PRO time_bod, ra, dec, jDay
@@ -67,15 +99,15 @@ PRO time_bod, ra, dec, jDay
   oneHour = 0.0416667    ; one hour in day units
   altArr = []            ; initialize a null array to hold data
   FOR t = jDay, endTime, oneHour DO BEGIN  ; for every hour in the jday
-     alt = (find_bod(ra, dec, t))[1]      ; get altitude from function above
-     CALDAT, t, mo, day, yr, hr, min, sec
+     alt = (find_bod(ra, dec, t))[1]       ; get altitude from function above
+     CALDAT, t, mo, day, yr, hr, min, sec  ; unpack julian info
      altArr = [ [altArr],[hr,alt] ]        ; append to data array
   ENDFOR
   ; plot altitude vs hr
   plot, altArr[0,*], altArr[1,*], yrange = [-0.174533, !pi/2],$
         title='Altitude of Stellar Body in Time',$
         xtitle='Time (hrs)', ytitle='Altitude (rad)',$
-        /xstyle, /ystyle
+        /xstyle, /ystyle, xrange=[0,24]
 END
      
        
