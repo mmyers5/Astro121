@@ -20,7 +20,7 @@ PRO show_me_the_sun, endTime
      isun, altSun, azSun, /aa               ; get azimuth and altitude of sun in degrees
      result = point2(az=azSun, alt=altSun)  ; point telescopes
      WAIT, 20                               ; wait before re-pointing
-     IF i mod 180 EQ 0 THEN BEGIN           ; every 3600 seconds
+     IF i mod 60 EQ 0 THEN BEGIN            ; every 20 minutes
         homer
      ENDIF
   ENDWHILE
@@ -49,8 +49,10 @@ PRO show_me_the_money, saveFile, endTime
   homer                ; calibrate for the first time
   i = 0                ; number of times had to wait 20 seconds
   WHILE systime(/julian, /utc) LT endTime DO BEGIN
-     azAlt = find_bod(ra, dec, systime(/julian,/utc)) ; get instantaneous (az,alt)
-     azAlt = !radeg*azAlt           ; convert (az,alt) to degrees
+     azAlt = find_bod(ra, dec, /NOW)      ; get instantaneous (az,alt)
+     azAlt = !radeg*azAlt                 ; convert (az,alt) to degrees
+     IF azAlt[0] LT 0 THEN azAlt[0]+=360  ; make sure we get positive angles
+     IF azAlt[1] LT 0 THEN azAlt[1]+=360
      result = point2(az=azAlt[0],alt=azAlt[1]) ; point telescopes
      WAIT, 20                        ; wait 20 seconds
      i+=1                            ; increment number by 1, i = 1+i
@@ -90,7 +92,7 @@ FUNCTION find_bod, ra, dec, jDay
 ;-
 
   LST = ilst(juldate=jDay)           ; get local sidereal time in hr decimal
-  LST = LST*(15.)*(!pi/180.) ; convert hr decimal to radians
+  LST = LST*(15.)*(!pi/180.)            ; convert hr decimal to radians
   bLat = !dtor*(37.8732)     ; our latitude in radians
   precess, ra, dec, 2000, 2015, /radian  ; precess coordinates
 
@@ -143,7 +145,7 @@ PRO time_bod, ra, dec, jDay
      altArr = [ [altArr],[hr,alt] ]        ; append to data array
   ENDFOR
   ; plot altitude vs hr
-  plot, altArr[0,*]-8, altArr[1,*], yrange = [-0.174533, !pi],$
+  plot, shift(altArr[1,*],-8), yrange = [-0.174533, !pi],$
         title='Altitude of Stellar Body in Time',$
         xtitle='Time (hrs)', ytitle='Altitude (rad)',$
         /xstyle, /ystyle, xrange=[0,24]
