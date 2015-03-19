@@ -14,7 +14,7 @@ PRO show_me_the_moon, endTime
 ; endTime: float
 ;     when you want the observation to end in UTC julian days
 ;-
-  homer        ; homer for first time
+;  homer        ; homer for first time
   i = 0        ; initialize count
   WHILE systime(/julian,/utc) LT endTime DO BEGIN
      imoon, altMoon, azMoon, /aa  ; get altitude and azimuth of sun in degrees
@@ -22,7 +22,7 @@ PRO show_me_the_moon, endTime
      WAIT, 20                     ; wait 20 seconds
      i+=1                         ; increment counter
      IF i mod 60 EQ 0 THEN BEGIN  ; every 20 minutes
-     homer                        ; calibrate telescopes again
+        homer                     ; calibrate telescopes again
      ENDIF
   ENDWHILE
 END
@@ -44,7 +44,7 @@ PRO show_me_the_sun, endTime
 ;     when you want the observation to end in UTC julian days
 ;-
 ;  homer      ; calibrate for the first time
-  i = 0      ; initialize number of times of waiting
+  i = 0       ; initialize number of times of waiting
   WHILE systime(/julian, /utc) LT ENDTIME DO BEGIN
      isun, altSun, azSun, /aa               ; get azimuth and altitude of sun in degrees
      result = point2(az=azSun, alt=altSun)  ; point telescopes
@@ -75,12 +75,12 @@ PRO show_me_the_money, saveFile, endTime
 ; endTime: float
 ;     when you want the observation to end in julian days
 ;-
-  homer                ; calibrate for the first time
+  ;homer                ; calibrate for the first time
   i = 0                ; number of times had to wait 20 seconds
   WHILE systime(/julian, /utc) LT endTime DO BEGIN
      restore, saveFile ; get the ra and dec from a save file
-     azAlt = find_bod(ra, dec)            ; get instantaneous (az,alt)
-     azAlt = !radeg*azAlt                 ; convert (az,alt) to degrees
+     azAlt = find_bod(ra, dec, systime(/julian, /utc))    ; get instantaneous (az,alt)
+     azAlt = !radeg*azAlt                   ; convert (az,alt) to degrees
      result = point2(az=azAlt[0],alt=azAlt[1]) ; point telescopes
      WAIT, 20                        ; wait 20 seconds
      i+=1                            ; increment number by 1, i = 1+i
@@ -125,8 +125,7 @@ FUNCTION find_bod, ra, dec, jDay
 
   raDec = [ [cos(dec)*cos(ra)],$  ; vectorize (ra,dec)
             [cos(dec)*sin(ra)],$
-            [        sin(dec)] ]
-  
+            [        sin(dec)] ]  
   raDec_haDec = [ [cos(LST),  sin(LST), 0],$     ; (ra,dec)->(ha,dec)
                   [sin(LST), -cos(LST), 0],$
                   [       0,         0, 1] ]
@@ -162,24 +161,21 @@ PRO time_bod, ra, dec, jDay
 ;     will increment this over 24 hours to give a picture of the
 ;     altitude of stellar body. must be the julian day in utc.
 ;-
-  
-  endTime = jDay + 1     ; add a full day to julian day
+  endTime = jDay +1     ; add a full day to julian day
   oneHour = 1/24.        ; one hour in day units
   altArr = []            ; initialize a null array to hold altitudes
   FOR t = jDay, endTime, oneHour DO BEGIN ; for every hour in the jday
-     ;imoon, alt, az, juldate=t, /aa
-     ;isun, ra,dec, juldate=t              ; do the sun
-     ;ra=ten(ra)*15.*!dtor                 ; convert the sun
-     ;dec = ten(dec)*!dtor                 ; again
-     imoon,ra,dec, juldate=t
+     ;ra*=!dtor
+     ;dec*=!dtor
      alt = (find_bod(ra, dec, t))[1] ; get altitude from function above 
+     imoon, alt, az, juldate=t, /aa
      altArr = [ [altArr],[alt] ] ; append to altitude array
   ENDFOR
-  altArr*=!radeg
+  ;altArr*=!radeg
   ; plot altitude vs hr
   plot, altArr,$
         title='Altitude of Stellar Body in Time',$
-        xtitle='Time from Now (hrs)', ytitle='Altitude (rad)',$
+        xtitle='Time from Start (hrs)', ytitle='Altitude (deg)',$
         /xstyle, /ystyle, psym=-4
-  oplot, indgen(24), indgen(24)*0+(10), linestyle=2 ; plot 10 degree line
+  oplot, indgen(24), indgen(24)*0+(0), linestyle=2 ; plot 10 degree line
 END
