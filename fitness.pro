@@ -28,17 +28,13 @@ PRO main_fit, guesses, D, hAngle, fitted
 ;     fitted.Dbar is altered to reflect D as opposed to D-Dg
 ;-
 
-  test_your_might, guesses, D, hAngle, fitted
-  plot, [fitted.errA], psym=4
-  print, fitted.errA
-  i = 0
-  WHILE i LT 10 DO BEGIN
+  test_your_might, guesses, D, hAngle, fitted       ; fit for the first time
+  i = 0                                             ; initiate test counter
+  WHILE i LT 10 DO BEGIN                             
     print, 'tested again!'
-    i += 1
-    guesses = { A:fitted.A, B:fitted.B, C:fitted.C }
-    test_your_might, guesses, D, hAngle, fitted
-    print, fitted.errA
-    oplot, [i], [fitted.errA], psym=4    
+    i += 1                  
+    guesses = { A:fitted.A, B:fitted.B, C:fitted.C } ; grab new guess vals
+    test_your_might, guesses, D, hAngle, fitted      ; evaluate at new guess vals    
   ENDWHILE
 END
 
@@ -73,14 +69,17 @@ PRO test_your_might, guesses, D, hAngle, fitted
   print, 'Check 1: evaluated function at guessed values.'
   RHS = D-Dg                                 ; get the right hand side of matrix
   ; evaluate derivatives and get left hand side
-  dbl = 10d-16                               ; to form delA ~ Ad-12
+  dbl = 10d-5                                ; to form delA ~ Ad-5
   del = {A:guesses.A*dbl, B:guesses.B*dbl, C:guesses.C*dbl}  ; get delta structure
-  LHS = deriv_eval(guesses, hAngle, del) ; evaluation
+  LHS = deriv_eval(guesses, hAngle, del)     ; evaluation
   print, 'Check 2: evaluated derivatives.'
   ; evaluate matrix to get predicted values of delta coefficients
   fitted = matrix_eval(LHS, RHS)
   print, 'Check 3: evaluated matrix.'
-  fitted.dBar+=Dg
+  fitted.dBar+=Dg              ; get D-Dg+Dg
+  fitted.A+=guesses.A          ; get new guess values
+  fitted.B+=guesses.B
+  fitted.C+=guesses.C
 END
 
 FUNCTION matrix_eval, LHS, RHS
@@ -178,7 +177,7 @@ FUNCTION deriv_eval, guesses, hAngle, del
   structB = {A:guesses.A, B:guesses.B-del.B, C:guesses.C}
   structC = {A:guesses.A, B:guesses.B, C:guesses.C-del.C}
   ; evaluate functions with each parameter uniquely altered again
-  minusA = fringe_func(structA,hAngle)
+  minusA = fringe_func(structA, hAngle)
   minusB = fringe_func(structB, hAngle)
   minusC = fringe_func(structC, hAngle)
   ; evaluate averages of derivatives
@@ -208,7 +207,7 @@ FUNCTION fringe_func, coeffs, H
 ;     which contain the tags A, B, C
 ;     A, B, and C are the parameters we are using in the handout.
 ;
-; H: float
+; H: list
 ;     the hour angle of the source that we would like to use
 ;
 ; OUTPUTS
@@ -216,8 +215,8 @@ FUNCTION fringe_func, coeffs, H
 ; daFunc: float
 ;     a single value of the function evaluated with A, B, C, and H.
 ;-
-  pi = double(!pi)
-  argument = 2d*pi*coeffs.C*sin(H)
+  argument = 2d*!pi*coeffs.C*sin(H)
+  argument = !pi/2d
   daFunc = [coeffs.A*cos(argument)] - [coeffs.B*sin(argument)]
   RETURN, daFunc
 END
