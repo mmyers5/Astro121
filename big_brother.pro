@@ -43,7 +43,8 @@ PRO show_me_the_sun, endTime
 ; endTime: float
 ;     when you want the observation to end in UTC julian days
 ;-
-;  homer      ; calibrate for the first time
+
+  homer      ; calibrate for the first time
   i = 0       ; initialize number of times of waiting
   WHILE systime(/julian, /utc) LT ENDTIME DO BEGIN
      isun, altSun, azSun, /aa               ; get azimuth and altitude of sun in degrees
@@ -75,7 +76,7 @@ PRO show_me_the_money, saveFile, endTime
 ; endTime: float
 ;     when you want the observation to end in julian days
 ;-
-  ;homer                ; calibrate for the first time
+  homer                ; calibrate for the first time
   i = 0                ; number of times had to wait 20 seconds
   WHILE systime(/julian, /utc) LT endTime DO BEGIN
      restore, saveFile ; get the ra and dec from a save file
@@ -165,13 +166,11 @@ PRO time_bod, ra, dec, jDay
   oneHour = 1/24.        ; one hour in day units
   altArr = []            ; initialize a null array to hold altitudes
   FOR t = jDay, endTime, oneHour DO BEGIN ; for every hour in the jday
-     ;ra*=!dtor
-     ;dec*=!dtor
      alt = (find_bod(ra, dec, t))[1] ; get altitude from function above 
-     imoon, alt, az, juldate=t, /aa
+     ;imoon, alt, az, juldate=t, /aa
      altArr = [ [altArr],[alt] ] ; append to altitude array
   ENDFOR
-  ;altArr*=!radeg
+  altArr*=!radeg
   ; plot altitude vs hr
   plot, altArr,$
         title='Altitude of Stellar Body in Time',$
