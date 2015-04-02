@@ -14,7 +14,7 @@ PRO show_me_the_moon, endTime
 ; endTime: float
 ;     when you want the observation to end in UTC julian days
 ;-
-;  homer        ; homer for first time
+  homer        ; homer for first time
   i = 0        ; initialize count
   WHILE systime(/julian,/utc) LT endTime DO BEGIN
      imoon, altMoon, azMoon, /aa  ; get altitude and azimuth of sun in degrees
