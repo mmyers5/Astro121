@@ -1,0 +1,39 @@
+PRO brute_force, dec, locFreq, hAngles, RHS, count, fitted
+;+
+; OVERVIEW
+; --------
+; will do a brute force least-squares fitting to get declination of a
+; stellar object
+;
+; CALLING SEQUENCE
+; ----------------
+; pro brute_force, dec, locFreq, hAngles, RHS, count, fitted
+;
+; PARAMETERS
+; ----------
+; dec: float
+;     the first guess you would like to adopt for the declination
+; locFreq: float
+;     the frequency at which you made the observation in Hz
+; hAngles: list
+;     the hour angles of the stellar body upon observation
+; RHS: list
+;     the file for the voltage amplitude, i.e. str.volts
+; count: int
+;     the number of times you would like the function to be
+;     evaluated. the more the merrier
+; 
+; OUTPUTS
+; -------
+; fitted: struct
+;     a structure containing the fitted values that correspond to the
+;     smallest sum of least-squares. tags are as follows:
+;     {A, B, C, std}
+;-
+
+  lambda = 3e8/locFreq                  ; get the wavelength
+  C = 2* !pi * (10./lambda) * cos(dec)  ; get the argument of trig functions
+  arg = C * sin(hAngles)                ; complete the argument
+  LHS = [ [cos(arg)], [-sin(arg)] ]     ; start left-hand-side
+  LHS = transpose(LHS)                  ; turn into proper matrix
+  
