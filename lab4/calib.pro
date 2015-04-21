@@ -1,26 +1,32 @@
 PRO loop_da_loop
 ;+
+; OVERVIEW
+; --------
+; will loop through a range of galactic longitudes and grab the doppler
+; velocities at those longitudes in the galactic plane. will then proceed to
+; plot rotation curve of da stuff
 ;-
-  lRange = findgen(900)*.10    ;get longitude range
-  vel = []
-  FOR i=0, 899 DO BEGIN
-     param = {lonra:lRange[i], latdec:0}        ; generate parameters 
-     temp = doppler_it(param, systime(/JULIAN)) ; grab velocity
-     vel = [vel, temp]                          ; append to velocity array
+  lRange = findgen(90)    ;get longitude range 0<l<90
+  velo = []                     ; create velocity array
+  FOR i=0, 89 DO BEGIN
+     param = {lonra:lRange[i], latdec:0.}       ; generate parameters 
+     temp = doppler_it(param, systime(/JULIAN)) ; grab velocity in degrees
+     velo = [velo, temp]                          ; append to velocity array
+		 print, temp
   ENDFOR
   vSun = 220                    ; sun velocity in km/s
-  rSun = 8.5                    ; sun distance form gc in kpc
+  rSun = 8.5                    ; sun distance from gc in kpc
   lRange *= !dtor
-  rRange = 8.5*tan(lRange)
-  plot, rRange, (vel/(rSun*sin(lRange))) + (vSun/rSun), xrange=[200,800],/xstyle, /ystyle
-  ;plot, lRange*!radeg, vel, /xstyle, /ystyle, xrange=[0,1]
+	rRange = sin(lRange)*rSun     ; the radius values 
+	vR = [(velo/(rSun*sin(lRange))) + (vSun/rSun)]
+	plot, rRange, vR
 END
 
 FUNCTION doppler_it, param, jDay
 ;+
 ; OVERVIEW
 ; --------
-; will doppler shift spectra
+; will generate doppler velocity for given galactic coordinate (l,b)
 ;
 ; CALLING SEQUENCE
 ; ----------------
@@ -30,14 +36,15 @@ FUNCTION doppler_it, param, jDay
 ; ----------
 ; param: structure
 ;     the structure with tags filename, nspec, lonra, latdec, and system
-;     to be filled as specified by leuschner_rx
+;     to be filled as specified by leuschner_rx, really only uses lonra and
+;			latdec heh
 ; jDay: float
 ;     the julian day of the observation
 ;
 ; OUTPUTS
 ; -------
-; deltaFreq: float
-;     the doppler shifted frequency
+; velo: float
+;     the doppler shift velocity in km/s
 ;-
   nlat = 37.8732     ; set latitude and longitude of leuschner
   wlong = 122.2573
@@ -45,9 +52,8 @@ FUNCTION doppler_it, param, jDay
   raDec = gal_raDec(param.lonra, param.latdec)
   ra=raDec[0]
   dec = raDec[1]
-  vel = (ugdoppler(ra, dec, jDay, nlat=nlat, wlong=wlong))[3]
-  deltaFreq = (1420.4d6)*(3d8)/vel
-  return, deltaFreq
+  velo = (ugdoppler(ra, dec, jDay, nlat=nlat, wlong=wlong))[3]
+  return, velo 
 END
 FUNCTION gal_raDec, gLong, gLat
 ;+
