@@ -93,7 +93,7 @@ FUNCTION gal_raDec, gLong, gLat
   raDec = [ra, dec]
   return, raDec
 END
-PRO power_grab, fileTag, param, locFreq, diodeON, diodeOFF, calib=calib
+PRO power_grab, fileTag, param, locFreq, diodeON, diodeOFF, Tsys, calib=calib
 ;+
 ; OVERVIEW
 ; --------
@@ -101,7 +101,7 @@ PRO power_grab, fileTag, param, locFreq, diodeON, diodeOFF, calib=calib
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; power_grab, fileTag, nSpectra, locFreq, diodeON, diodeOFF, /calib
+; power_grab, fileTag, nSpectra, locFreq, diodeON, diodeOFF, Tsys, /calib
 ;
 ; PARAMETERS
 ; ----------
@@ -126,7 +126,7 @@ PRO power_grab, fileTag, param, locFreq, diodeON, diodeOFF, calib=calib
 ; diodeOFF: structure
 ;     the structure from leuschner_rx with the diode off
 ;-
-  ;result = set_lhp(freq=locFreq, amp=19.9)         ; set the local oscillator
+  result = set_lhp(freq=locFreq, amp=19.9)         ; set the local oscillator
   noise, /on   ; get data with diode on
   WAIT, 8      ; wait for the diode to turn on
   result = leuschner_rx(fileTag+'_on.fits',$       ; set filename
@@ -142,7 +142,6 @@ PRO power_grab, fileTag, param, locFreq, diodeON, diodeOFF, calib=calib
   IF keyword_set(calib) THEN BEGIN                 ; check if want calibration
      tempON = total(diodeON.auto0_real)            ; get on temp
      tempOFF = total(diodeOFF.auto0_real)          ; get off temp
-     plot, diodeON.auto0_real
-     oplot, diodeOFF.auto0_real, color=!magenta    ; shout out to darkstar
   ENDIF
+  Tsys = (total(tempOFF)/total(tempON - tempOFF))*300
 END
