@@ -143,5 +143,5 @@ PRO power_grab, fileTag, param, locFreq, diodeON, diodeOFF, Tsys, calib=calib
      tempON = total(diodeON.auto0_real)            ; get on temp
      tempOFF = total(diodeOFF.auto0_real)          ; get off temp
   ENDIF
-  Tsys = (total(tempOFF)/total(tempON - tempOFF))*300
+  Tsys = tempOFF/(tempON-tempOFF)*300
 END
