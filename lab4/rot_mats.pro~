@@ -1,0 +1,83 @@
+FUNCTION gal_raDec, gLong, gLat
+;+
+; OVERVIEW
+; --------
+; will take in galactic longitude and galactic latitude in degrees and
+; convert them to right ascenson and declination in degrees in 2000
+; equinox
+;
+; CALLING SEQUENCE
+; ----------------
+; result = gal_raDec(gLong, gLat)
+;
+; PARAMETERS
+; ----------
+; gLong: float
+;     the galactic longitude (l) in degrees
+; gLat: float
+;     the galactic latitude (b) in degrees
+;
+; OUTPUTS
+; -------
+; raDec: list
+;     the right ascension and declination as a tuple i.e. right
+;     ascension = result[0], declination = result[1], in degrees
+;-
+  gLong *= !dtor   ; convert coordinates to radians
+  gLat *= !dtor    ; convert coordinates to radians
+  gLongLat = [ [cos(gLat)*cos(gLong)] ,$   ; vectorize (l,b)
+               [cos(gLat)*sin(gLong)] ,$
+               [           sin(gLat)]  ]
+  rotMatrix = [ [-0.054876,  0.494109, -0.867666],$ ; get rotation matrix
+                [-0.873437, -0.444830, -0.198076],$
+                [-0.483835,  0.746982,  0.455984] ]
+  raDec = rotMatrix ## gLongLat           ; rotate (l,b) -> (ra,dec)
+  ra = atan(raDec[1], raDec[0])*!radeg    ; unpack vector and degree-ify
+  dec = asin(raDec[2])*!radeg             
+  raDec = [ra, dec]
+  return, raDec                           ; return (ra,dec) in degrees
+END
+
+FUNCTION raDec_azAlt, ra, dec, jDay
+;+
+; OVERVIEW
+; --------
+; will take in right ascension and declination in degrees for 2000
+; equinox and rotate them into azimuth and altitude in degrees centered
+; on leuschner for a given julian day
+;
+; CALLING SEQUENCE
+; ----------------
+; result = raDec_azAlt(ra, dec, jDay)
+;
+; PARAMETERS
+; ----------
+; ra: float
+;     the right ascension in 2000 equinox given in degrees
+; dec: float
+;     the declination in 2000 equinox given in radians
+; jDay: float
+;     the julian day given in julian days
+;-
+
+  LST = ilst(juldate=jDay)           ; get local sidereal time in hr decimal
+  LST = LST*(15.)*!dtor              ; convert hr decimal to radians
+  bLat = !dtor*(37.8732)             ; leuschner latitude in radians
+  precess, ra, dec, 2000, 2015, /radian  ; precess coordinates
+
+  raDec = [ [cos(dec)*cos(ra)],$  ; vectorize (ra,dec)
+            [cos(dec)*sin(ra)],$
+            [        sin(dec)] ]
+  raDec_haDec = [ [cos(LST),  sin(LST), 0],$     ; (ra,dec)->(ha,dec)
+                  [sin(LST), -cos(LST), 0],$
+                  [       0,         0, 1] ]
+  haDec_azAlt = [ [-sin(bLat),  0, cos(bLat)],$  ; (ha,dec)->(az,alt)
+                  [         0, -1,         0],$
+                  [ cos(bLat),  0, sin(bLat)] ]
+  haDec = raDec_haDec ## raDec   ; rotate (ra,dec)-->(ha,dec)
+  azAlt = haDec_azAlt ## haDec   ; rotate (ha,dec)-->(az,alt)
+  az = atan(azAlt[1],azAlt[0])   ; get azimuth in radians
+  alt = asin(azAlt[2])           ; get altitude in radians
+  azAlt = [az, alt]              ; put together in tuple form
+  RETURN, azAlt*!radeg           ; return (az,alt) in degrees
+END
