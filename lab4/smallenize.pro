@@ -14,7 +14,9 @@ FUNCTION map_spec, fileTag, nFiles, nSpectra
 ; ----------
 ; fileTag: string
 ; 		assumes that the data files are in ./data, is the fits file for spec
-;     incremented up to three digits of precision, i.e. 'fileTag_001_on'
+;     incremented up to three digits of precision, i.e. 'fileTag_001', where
+;			diode status is contained in fileTag
+;     if for some reason not starting from file 000, do special sheisse
 ; nFiles: integer
 ;			the number of files you got
 ; nSpectra
@@ -66,8 +68,8 @@ FUNCTION channel_sort, fileTagx, nSpectra
 	N = 8192                         ; the number of elements from each extension
 	extArr = make_array(N, nSpectra) ; holds spectra from extensions of one file
                                    ; each row is an extension
-	onFil='./data/'+fileTagx+'_'+on+'.fits'          ; for on spectra
-	offFil='./data/'+fileTagx+'_'+off+'.fits'        ; for off spectra
+	onFil = fileTagx+'_'+on+'.fits'          ; for on spectra
+	offFil = fileTagx+'_'+off+'.fits'        ; for off spectra
 	FOR k=1, nSpectra DO BEGIN                       ; loop through each ext
 		onTemp = (mrdfits(onFil,k)).auto0_real         ; unpack ext on spec
 		offTemp = (mrdfits(offFil,k)).auto0_real       ; unpack ext off spec

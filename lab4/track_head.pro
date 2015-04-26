@@ -1,4 +1,4 @@
-PRO map_plane, fileTag, gLong, interv, nSpec
+PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
 ;+
 ; OVERVIEW
 ; --------
@@ -7,13 +7,16 @@ PRO map_plane, fileTag, gLong, interv, nSpec
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; map_plane, fileTag, gLat, interv, nSpec
+; map_plane, fileTag, dStatus, gLat, interv, nSpec
 ;
 ; PARAMETERS
 ; ----------
 ; fileTag: string
 ; 		the string by which to label your tags. each observation will be
 ; 		incremented with triple precision for identification
+;     looking for 'fileTag_on_xxx.fits', where xxx is the increment
+;	dStatus: string
+;			either 'on' or 'off' indicates whether the noise diode is on or off
 ; gLong: list
 ;			the start and stop coordinates of the galactic longitude in
 ; 		degrees...please make them even numbers
@@ -22,17 +25,18 @@ PRO map_plane, fileTag, gLong, interv, nSpec
 ; nSpec: integer
 ; 		the number of spectra to take
 ;-
-	j = 0              ; initialize filetag count
+	j = 0                                            ; initialize filetag count
 	FOR i=gLong[0], gLong[1], interv DO BEGIN
 		sj = STRING(j, FORMAT='(I03)')                 ; string-ify filetag count
-		filename = './data/'+fileTag+'_'+sj+'.fits'    ; generate full filename
-		raDec = (gal_raDec(gLong, 0)                   ; (l,b)->(ra,dec) in degrees
+		filename = './data/'+fileTag+'_'+dStatus+'_'+sj+'.fits'  ; filename
+		raDec = gal_raDec(gLong, 0)                    ; (l,b)->(ra,dec) in degrees
 		ra = raDec[0]                                        ; unpack ra
 		dec = raDec[1]                                       ; unpack dec
 		PRECESS, ra, dec, 2000, 2015                         ; precess coordinates
 		ra = ra*(24./360)                                    ; convert ra to hours
-		follow, ra, dec, duration = 20                       ; follow coordinate
+		follow, ra, dec, duration = 5                        ; follow coordinate
 		result = leuschner_rx(filename, nSpec, i, 0, 'ga')   ; grab spectra
+		j+=1                                                 ; increment filename
 	ENDFOR
 END
 		
