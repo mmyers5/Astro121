@@ -40,7 +40,7 @@ PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
 	ENDFOR
 END
 		
-PRO map_times, gLat, gLong, jDay, altArr
+PRO map_times, gLat, gLong, jDay, altArr, azArr
 ;+
 ; OVERVIEW
 ; --------
@@ -71,13 +71,16 @@ PRO map_times, gLat, gLong, jDay, altArr
   endTime = jDay + 1               ; add 24 hours to julian day
   oneHour = 1/24.                  ; one hour in day units
   altArr = []                      ; init null array to hold alts
+	azArr = []
   FOR t = jDay, endTime, oneHour DO BEGIN
      azAlt = raDec_azAlt(ra, dec, t)   ; get (az,alt) in degrees
+     az = azAlt[*,0]
      alt = azAlt[*,1]                  ; get only altitudes
      altArr = [[altArr],[alt]]         ; make a nice array
                                 ; each row corresponds to a julian day,
                                 ; each column corresponds to a
                                 ; coordinate
+		azArr = [[azArr],[az]]
   ENDFOR
   
 END
