@@ -1,3 +1,41 @@
+PRO map_plane, fileTag, gLong, interv, nSpec
+;+
+; OVERVIEW
+; --------
+; will point Leuschner at coordinates specified by gLat, then grab spectra.
+; will store the fits files in ./data/ MAKE SURE DIODE IS SET, compile rot_mats
+;
+; CALLING SEQUENCE
+; ----------------
+; map_plane, fileTag, gLat, interv, nSpec
+;
+; PARAMETERS
+; ----------
+; fileTag: string
+; 		the string by which to label your tags. each observation will be
+; 		incremented with triple precision for identification
+; gLong: list
+;			the start and stop coordinates of the galactic longitude in
+; 		degrees...please make them even numbers
+; interv: float
+; 		the increment interval between the galactic longitude coordinates 
+; nSpec: integer
+; 		the number of spectra to take
+;-
+	j = 0              ; initialize filetag count
+	FOR i=gLong[0], gLong[1], interv DO BEGIN
+		sj = STRING(j, FORMAT='(I03)')                 ; string-ify filetag count
+		filename = './data/'+fileTag+'_'+sj+'.fits'    ; generate full filename
+		raDec = (gal_raDec(gLong, 0)                   ; (l,b)->(ra,dec) in degrees
+		ra = raDec[0]                                        ; unpack ra
+		dec = raDec[1]                                       ; unpack dec
+		PRECESS, ra, dec, 2000, 2015                         ; precess coordinates
+		ra = ra*(24./360)                                    ; convert ra to hours
+		follow, ra, dec, duration = 20                       ; follow coordinate
+		result = leuschner_rx(filename, nSpec, i, 0, 'ga')   ; grab spectra
+	ENDFOR
+END
+		
 PRO map_times, gLat, gLong, jDay, altArr
 ;+
 ; OVERVIEW
