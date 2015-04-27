@@ -1,4 +1,12 @@
+PRO test, gLong, inter
+    for i = gLong[0], gLong[1], inter do begin
+            print, i
+            endfor
+            end
+
 PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
+
+
 ;+
 ; OVERVIEW
 ; --------
@@ -31,21 +39,24 @@ PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
 ; col1: the file number of the fits file associated with the row
 ; col2: the right ascension of observation in degrees in 2000 equinox
 ; col3: the declination of observation in degrees in 2000 equinox
-;	col4: the julian day of the observation in UTC days
+; col4: the julian day of the observation in UTC days
 ;-
-	j = 0                                            ; initialize filetag count
-	openw, 1, filepath('./data/'+fileTag+'_'+dStatus+'.log')  ; for getting stuff
-	FOR i=gLong[0], gLong[1], interv DO BEGIN
+	j = gLong[0]/interv                                            ; initialize filetag count
+	openw, 1, './data/'+fileTag+'_'+dStatus+'.log', /append  ; for getting stuff
+	FOR k=gLong[0], gLong[1], interv DO BEGIN
+        i=k
 		sj = STRING(j, FORMAT='(I03)')                 ; string-ify filetag count
 		filename = './data/'+fileTag+'_'+dStatus+'_'+sj+'.fits'  ; filename
 		raDec = gal_raDec(i, 0)                        ; (l,b)->(ra,dec) in degrees
 		ra = raDec[0]                                        ; unpack ra
 		dec = raDec[1]                                       ; unpack dec
 		printf, 1, j, ra, dec, systime(/julian, /utc)        ; store info for dopp
-	  azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))    ; (ra,dec)->(az,alt)
-    az=azAlt[0]                                          ; unpack az
-    alt=azAlt[1]                                         ; unpack alt
-    dishStatus=pointdish(alt, az)                        ; point dish
+        azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))    ; (ra,dec)->(az,alt)
+        az=azAlt[0]                                          ; unpack az
+        alt=azAlt[1]                                         ; unpack alt
+        IF az LT 0 THEN az+=360                     ; make it positive
+        print, 'az: ',az, '   alt: ',alt
+        dishStatus=pointdish(az=az, alt=alt)                        ; point dish
 		print, '!!!DISH STATUS!!!', dishStatus               ; good if prints 0
 		result = leuschner_rx(filename, nSpec, i, 0, 'ga')   ; grab spectra
 		j+=1                                                 ; increment filename
