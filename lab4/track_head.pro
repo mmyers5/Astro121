@@ -24,14 +24,24 @@ PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
 ; 		the increment interval between the galactic longitude coordinates 
 ; nSpec: integer
 ; 		the number of spectra to take
+;
+; OUTPUTS
+; -------
+; will output a log file in the data folder. has 4 columns, all floats
+; col1: the file number of the fits file associated with the row
+; col2: the right ascension of observation in degrees in 2000 equinox
+; col3: the declination of observation in degrees in 2000 equinox
+;	col4: the julian day of the observation in UTC days
 ;-
 	j = 0                                            ; initialize filetag count
+	openw, 1, filepath('./data/'+fileTag+'_'+dStatus+'.log')  ; for getting stuff
 	FOR i=gLong[0], gLong[1], interv DO BEGIN
 		sj = STRING(j, FORMAT='(I03)')                 ; string-ify filetag count
 		filename = './data/'+fileTag+'_'+dStatus+'_'+sj+'.fits'  ; filename
-		raDec = gal_raDec(i, 0)                    ; (l,b)->(ra,dec) in degrees
+		raDec = gal_raDec(i, 0)                        ; (l,b)->(ra,dec) in degrees
 		ra = raDec[0]                                        ; unpack ra
 		dec = raDec[1]                                       ; unpack dec
+		printf, 1, j, ra, dec, systime(/julian, /utc)        ; store info for dopp
 	  azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))    ; (ra,dec)->(az,alt)
     az=azAlt[0]                                          ; unpack az
     alt=azAlt[1]                                         ; unpack alt
@@ -40,6 +50,7 @@ PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
 		result = leuschner_rx(filename, nSpec, i, 0, 'ga')   ; grab spectra
 		j+=1                                                 ; increment filename
 	ENDFOR
+	close, 1
 END
 		
 PRO map_times, gLat, gLong, jDay, altArr, azArr
@@ -54,7 +65,7 @@ PRO map_times, gLat, gLong, jDay, altArr, azArr
 ;
 ; CALL SEQUENCE
 ; -------------
-; map_times, gLat, gLong, jDay, altArr
+; map_times, gLat, gLong, jDay, altArr, azArr
 ;
 ; PARAMETERS
 ; ----------
