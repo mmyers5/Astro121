@@ -12,14 +12,14 @@ PRO loop_da_loop
      param = {lonra:lRange[i], latdec:0.}       ; generate parameters 
      temp = doppler_it(param, systime(/JULIAN)) ; grab velocity in degrees
      velo = [velo, temp]                          ; append to velocity array
-		 print, temp
+     print, temp
   ENDFOR
   vSun = 220                    ; sun velocity in km/s
   rSun = 8.5                    ; sun distance from gc in kpc
   lRange *= !dtor
-	rRange = sin(lRange)*rSun     ; the radius values 
-	vR = [(velo/(rSun*sin(lRange))) + (vSun/rSun)]
-	plot, rRange, vR
+  rRange = sin(lRange)*rSun     ; the radius values 
+  vR = [(velo/(rSun*sin(lRange))) + (vSun/rSun)]*rRange
+  plot, rRange, vR
 END
 
 FUNCTION doppler_it, param, jDay
@@ -143,5 +143,5 @@ PRO power_grab, fileTag, param, locFreq, diodeON, diodeOFF, Tsys, calib=calib
      tempON = total(diodeON.auto0_real)            ; get on temp
      tempOFF = total(diodeOFF.auto0_real)          ; get off temp
   ENDIF
-  Tsys = tempOFF/(tempON-tempOFF)*300
+  Tsys = tempOFF/(tempON-tempOFF)
 END
