@@ -40,7 +40,8 @@ FUNCTION gal_raDec, gLong, gLat
   ra = atan(raDec[*,1], raDec[*,0])       ; unpack vectors
   dec = asin(raDec[*,2])                  ; of same shape as vec
   raDec = [[ra], [dec]]*!radeg            ; convert to degrees
-  return, raDec                           ; (ra,dec) in degrees
+:q
+q!  return, raDec                           ; (ra,dec) in degrees
 END
 
 FUNCTION raDec_azAlt, ra, dec, jDay
@@ -49,7 +50,7 @@ FUNCTION raDec_azAlt, ra, dec, jDay
 ; --------
 ; will take in right ascensions and declinations in degrees for 2000
 ; equinox and rotate them into azimuth and altitude in degrees centered
-; on leuschner for a given julian day in 2015 epoch
+; on leuschner for a given julian day
 ;
 ; CALLING SEQUENCE
 ; ----------------
@@ -62,14 +63,14 @@ FUNCTION raDec_azAlt, ra, dec, jDay
 ; dec: list
 ;     the declinations in 2000 equinox given in degrees
 ; jDay: float
-;     the julian day given in julian days, UTC time
+;     the julian day given in julian days
 ;
 ; OUTPUTS
 ; -------
 ; azAlt: list
 ;     the azimuths and altitudes of object where each column
 ;     is a pair of coordinates (az,alt), i.e. to get the 20th
-;     coordinate, use azAlt[20,*], given in current epoch
+;     coordinate, use azAlt[20,*]
 ;-
   ra*=!dtor
   dec*=!dtor

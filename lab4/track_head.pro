@@ -3,7 +3,7 @@ PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
 ; OVERVIEW
 ; --------
 ; will point Leuschner at coordinates specified by gLat, then grab spectra.
-; will store the fits files in ./data/ MAKE SURE DIODE IS SET, compile rot_mats
+; will store the fits files in ./data/ compile rot_mats prior to running this
 ;
 ; CALLING SEQUENCE
 ; ----------------
@@ -32,11 +32,11 @@ PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
 		raDec = gal_raDec(i, 0)                    ; (l,b)->(ra,dec) in degrees
 		ra = raDec[0]                                        ; unpack ra
 		dec = raDec[1]                                       ; unpack dec
-		;PRECESS, ra, dec, 2000, 2015                        ; precess coordinates
-	    azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))   ; (ra,dec)->(az,alt)
-        az=azAlt[0]
-        alt=azAlt[1]
-        dishStatus=pointdish(alt=alt, az=az)                 ; point dish
+	  azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))    ; (ra,dec)->(az,alt)
+    az=azAlt[0]                                          ; unpack az
+    alt=azAlt[1]                                         ; unpack alt
+    dishStatus=pointdish(alt, az)                        ; point dish
+		print, '!!!DISH STATUS!!!', dishStatus               ; good if prints 0
 		result = leuschner_rx(filename, nSpec, i, 0, 'ga')   ; grab spectra
 		j+=1                                                 ; increment filename
 	ENDFOR
@@ -59,10 +59,10 @@ PRO map_times, gLat, gLong, jDay, altArr, azArr
 ; PARAMETERS
 ; ----------
 ; gLat: list
-;     a range of galactic latitudes over which you wanna be
+;     a list of galactic latitudes over which you wanna be
 ;     lookin' specified in degrees
 ; gLong: list
-;     a range of falactic longitudes over which you wanna be
+;     a list of falactic longitudes over which you wanna be
 ;     lookin' specified in degrees
 ; jDay: float
 ;     beginning of timeframe to look at in julian days
@@ -83,6 +83,6 @@ PRO map_times, gLat, gLong, jDay, altArr, azArr
                                 ; each column corresponds to a
                                 ; coordinate
 		azArr = [[azArr],[az]]
+		; NOTE, allowed ranges: 12<alt<87, -5<az<365
   ENDFOR
-  
 END
