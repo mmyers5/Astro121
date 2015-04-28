@@ -1,12 +1,4 @@
-PRO test, gLong, inter
-    for i = gLong[0], gLong[1], inter do begin
-            print, i
-            endfor
-            end
-
-PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
-
-
+PRO map_plane, fileTag, lStatus, gLong, interv, nSpec
 ;+
 ; OVERVIEW
 ; --------
@@ -15,23 +7,23 @@ PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; map_plane, fileTag, dStatus, gLat, interv, nSpec
+; map_plane, fileTag, lStatus, gLat, interv, nSpec
 ;
 ; PARAMETERS
 ; ----------
 ; fileTag: string
-; 		the string by which to label your tags. each observation will be
-; 		incremented with triple precision for identification
-;     looking for 'fileTag_on_xxx.fits', where xxx is the increment
-;	dStatus: string
-;			either 'on' or 'off' indicates whether the noise diode is on or off
+;       the string by which to label your tags. each observation will be
+;       incremented with triple precision for identification
+;       looking for 'fileTag_on_xxx.fits', where xxx is the increment
+;       lStatus: string
+;       either 'on' or 'off' indicates whether the line is on or off spec
 ; gLong: list
-;			the start and stop coordinates of the galactic longitude in
-; 		degrees...please make them even numbers
+;       the start and stop coordinates of the galactic longitude in
+;       degrees...please make them even numbers
 ; interv: float
-; 		the increment interval between the galactic longitude coordinates 
+;       the increment interval between the galactic longitude coordinates 
 ; nSpec: integer
-; 		the number of spectra to take
+;       the number of spectra to take
 ;
 ; OUTPUTS
 ; -------
@@ -41,29 +33,28 @@ PRO map_plane, fileTag, dStatus, gLong, interv, nSpec
 ; col3: the declination of observation in degrees in 2000 equinox
 ; col4: the julian day of the observation in UTC days
 ;-
-	j = gLong[0]/interv                                            ; initialize filetag count
-	openw, 1, './data/'+fileTag+'_'+dStatus+'.log', /append  ; for getting stuff
-	FOR k=gLong[0], gLong[1], interv DO BEGIN
+    j = gLong[0]/interv                                            ; initialize filetag count
+    openw, 1, './data/'+fileTag+'_'+lStatus+'.log', /append  ; for getting stuff
+    FOR k=gLong[0], gLong[1], interv DO BEGIN
         i=k
-		sj = STRING(j, FORMAT='(I03)')                 ; string-ify filetag count
-		filename = './data/'+fileTag+'_'+dStatus+'_'+sj+'.fits'  ; filename
-		raDec = gal_raDec(i, 0)                        ; (l,b)->(ra,dec) in degrees
-		ra = raDec[0]                                        ; unpack ra
-		dec = raDec[1]                                       ; unpack dec
-		printf, 1, j, ra, dec, systime(/julian, /utc)        ; store info for dopp
+        sj = STRING(j, FORMAT='(I03)')                 ; string-ify filetag count
+        filename = './data/'+fileTag+'_'+lStatus+'_'+sj+'.fits'  ; filename
+        raDec = gal_raDec(i, 0)                        ; (l,b)->(ra,dec) in degrees
+        ra = raDec[0]                                        ; unpack ra
+        dec = raDec[1]                                       ; unpack dec
+        printf, 1, j, ra, dec, systime(/julian, /utc)        ; store info for dopp
         azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))    ; (ra,dec)->(az,alt)
         az=azAlt[0]                                          ; unpack az
         alt=azAlt[1]                                         ; unpack alt
         IF az LT 0 THEN az+=360                     ; make it positive
-        print, 'az: ',az, '   alt: ',alt
         dishStatus=pointdish(az=az, alt=alt)                        ; point dish
-		print, '!!!DISH STATUS!!!', dishStatus               ; good if prints 0
-		result = leuschner_rx(filename, nSpec, i, 0, 'ga')   ; grab spectra
-		j+=1                                                 ; increment filename
-	ENDFOR
-	close, 1
+        print, '!!!DISH STATUS!!!', dishStatus               ; good if prints 0
+        result = leuschner_rx(filename, nSpec, i, 0, 'ga')   ; grab spectra
+        j+=1                                                 ; increment filename
+    ENDFOR
+    close, 1
 END
-		
+        
 PRO map_times, gLat, gLong, jDay, altArr, azArr
 ;+
 ; OVERVIEW
@@ -95,7 +86,7 @@ PRO map_times, gLat, gLong, jDay, altArr, azArr
   endTime = jDay + 1               ; add 24 hours to julian day
   oneHour = 1/24.                  ; one hour in day units
   altArr = []                      ; init null array to hold alts
-	azArr = []
+    azArr = []
   FOR t = jDay, endTime, oneHour DO BEGIN
      azAlt = raDec_azAlt(ra, dec, t)   ; get (az,alt) in degrees
      az = azAlt[*,0]
@@ -104,7 +95,7 @@ PRO map_times, gLat, gLong, jDay, altArr, azArr
                                 ; each row corresponds to a julian day,
                                 ; each column corresponds to a
                                 ; coordinate
-		azArr = [[azArr],[az]]
-		; NOTE, allowed ranges: 12<alt<87, -5<az<365
+        azArr = [[azArr],[az]]
+        ; NOTE, allowed ranges: 12<alt<87, -5<az<365
   ENDFOR
 END
