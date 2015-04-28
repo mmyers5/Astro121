@@ -26,7 +26,8 @@ PRO dopp_spec, logFile, loFreq, velo, freq
 ;-
   N = 8192                                 ; get number of elements per spectrum
   sampFreq = 24d6                          ; sampling frequency
-  readcol, logFile, j, ra, dec, jDay       ; read logfile, j is number of file
+  readcol, logFile, j, ra, dec, jDay,$     ; read logfile, j is number of file
+    format='IFFD'                          ; integer, float, float, double 
                                            ; (ra,dec) in degrees in 2000 equinox
                                            ; jDay is normal
   ra *= (24./360)                          ; convert ra to decimal hours
@@ -107,9 +108,9 @@ FUNCTION channel_sort, fileTagx, nSpectra
   extArr0 = make_array(N, nSpectra) ; holds spectra from extensions of one file
                                     ; each row is an extension
   extArr1 = make_array(N, nSpectra)
-  onFil = fileTagx+'_'+on+'.fits'          ; for on spectra
-  offFil = fileTagx+'_'+off+'.fits'        ; for off spectra
-  FOR k=1, nSpectra DO BEGIN         
+  onFil = fileTagx+'_on.fits'          ; for on spectra
+  offFil = fileTagx+'_off.fits'        ; for off spectra
+  FOR k=1, nSpectra DO BEGIN           ; loop through extensions        
     onSpec = mrdfits(onFil,k)           ; unpack ext on
     offSpec = mrdfits(offFil,k)         ; unpack ext off
     extArr0[*,k-1] = calib(onSpec.auto0_real, offSpec.auto0_real) ; calibrate
@@ -141,10 +142,10 @@ FUNCTION calib, onSpec, offSpec
 ; calSpec: list
 ;     the final calibrated spectrum
 ;-
-  coldSpec = mrdfits('./data/coldSpec.fits', 1)          ; spectrum of cold sky
-  hotSPec = mrdfits('./data/hotSpec.fits', 1)            ; spectrum with diode on
+  coldSpec = (mrdfits('./data/coldSpec.fits', 1)).auto0_real          ; spectrum of cold sky
+  hotSPec = (mrdfits('./data/hotSpec.fits', 1)).auto0_real            ; spectrum with diode on
   ratio = onSpec/offSpec                                 ; get shape of line
   Tsys = (total(coldSpec)/total(hotSpec-coldSpec)) * 20  ; sys temperature
-  calSpec = ratio*Tsys                               ; final calibrated spectrum
+  calSpec = ratio*Tsys                              ; final calibrated spectrum
   RETURN, calSpec
 END

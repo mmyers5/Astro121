@@ -34,11 +34,14 @@ PRO map_plane, fileTag, lStatus, gLong, interv, nSpec
 ; col4: the julian day of the observation in UTC days
 ;-
     j = gLong[0]/interv                               ; initialize filetag count
-    openw, 1, './data/'+fileTag+'_'+lStatus+'.log'  ; for getting stuff
+    openw, 1, './data/'+fileTag+'_'+lStatus+'.log', /append  ; for getting stuff
+    printf,1, FORMAT='("From ",I," to ",I," with ",I," spectra per file.")',$
+      gLong[0], gLong[1], nSpec                ; including header information
     FOR k=gLong[0], gLong[1], interv DO BEGIN
         i=k                                    ; variable to store place in loop
         sj = STRING(j, FORMAT='(I03)')         ; string-ify filetag count
-        filename = './data/'+fileTag+'_'+lStatus+'_'+sj+'.fits'  ; filename
+        filename='./data/'+fileTag+'_'+sj+'_'+lStatus+'.fits'  
+                          ; filename takes form of 'fileTag_000_on.fits'
         raDec = gal_raDec(i, 0)                ; (l,b)->(ra,dec) in degrees
         ra = raDec[0]                                      ; unpack ra
         dec = raDec[1]                                     ; unpack dec
@@ -96,6 +99,6 @@ PRO map_times, gLat, gLong, jDay, altArr, azArr
                                 ; each column corresponds to a
                                 ; coordinate
         azArr = [[azArr],[az]]
-        ; NOTE, allowed ranges: 12<alt<87, -5<az<365
+        ; NOTE, allowed ranges: 13<alt<87, -5<az<365
   ENDFOR
 END
