@@ -33,24 +33,24 @@ PRO map_plane, fileTag, lStatus, gLong, interv, nSpec
 ; col3: the declination of observation in degrees in 2000 equinox
 ; col4: the julian day of the observation in UTC days
 ;-
-    j = gLong[0]/interv                                            ; initialize filetag count
+    j = gLong[0]/interv                               ; initialize filetag count
     openw, 1, './data/'+fileTag+'_'+lStatus+'.log', /append  ; for getting stuff
     FOR k=gLong[0], gLong[1], interv DO BEGIN
-        i=k
-        sj = STRING(j, FORMAT='(I03)')                 ; string-ify filetag count
+        i=k                                    ; variable to store place in loop
+        sj = STRING(j, FORMAT='(I03)')         ; string-ify filetag count
         filename = './data/'+fileTag+'_'+lStatus+'_'+sj+'.fits'  ; filename
-        raDec = gal_raDec(i, 0)                        ; (l,b)->(ra,dec) in degrees
-        ra = raDec[0]                                        ; unpack ra
-        dec = raDec[1]                                       ; unpack dec
-        printf, 1, j, ra, dec, systime(/julian, /utc)        ; store info for dopp
-        azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))    ; (ra,dec)->(az,alt)
-        az=azAlt[0]                                          ; unpack az
-        alt=azAlt[1]                                         ; unpack alt
-        IF az LT 0 THEN az+=360                     ; make it positive
-        dishStatus=pointdish(az=az, alt=alt)                        ; point dish
-        print, '!!!DISH STATUS!!!', dishStatus               ; good if prints 0
-        result = leuschner_rx(filename, nSpec, i, 0, 'ga')   ; grab spectra
-        j+=1                                                 ; increment filename
+        raDec = gal_raDec(i, 0)                ; (l,b)->(ra,dec) in degrees
+        ra = raDec[0]                                      ; unpack ra
+        dec = raDec[1]                                     ; unpack dec
+        printf, 1, j, ra, dec, systime(/julian, /utc)      ; store info for dopp
+        azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))  ; (ra,dec)->(az,alt)
+        az=azAlt[0]                                        ; unpack az
+        alt=azAlt[1]                                       ; unpack alt
+        IF az LT 0 THEN az+=360                            ; be positive
+        dishStatus=pointdish(az=az, alt=alt)               ; point dish
+        print, '!!!DISH STATUS!!!', dishStatus             ; good if prints 0
+        result = leuschner_rx(filename, nSpec, i, 0, 'ga') ; grab spectra
+        j+=1                                               ; increment filename
     ENDFOR
     close, 1
 END
