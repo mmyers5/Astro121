@@ -34,7 +34,7 @@ PRO map_plane, fileTag, lStatus, gLong, interv, nSpec
 ; col4: the julian day of the observation in UTC days
 ;-
     j = gLong[0]/interv                               ; initialize filetag count
-    openw, 1, './data/'+fileTag+'_'+lStatus+'.log', /append  ; for getting stuff
+    openw, 1, './data/'+fileTag+'_'+lStatus+'.log'  ; for getting stuff
     FOR k=gLong[0], gLong[1], interv DO BEGIN
         i=k                                    ; variable to store place in loop
         sj = STRING(j, FORMAT='(I03)')         ; string-ify filetag count
