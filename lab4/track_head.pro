@@ -49,7 +49,7 @@ PRO map_plane, fileTag, lStatus, gLong, interv, nSpec
         openw, 1,'./data/'+fileTag+'_'+lStatus+'.log', /append ; re-open file
         printf, 1, j, ra, dec, systime(/julian, /utc)      ; store info for dopp
         close, 1                                           ; close just in case
-        raDec = gal_raDec(k, 0.)               ; (l,b)->(ra,dec) in degrees
+        raDec = gal_raDec(i, 0.)               ; (l,b)->(ra,dec) in degrees
         ra = raDec[0]                                      ; unpack ra
         dec = raDec[1]                                     ; unpack dec
         azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))  ; (ra,dec)->(az,alt)
@@ -61,6 +61,7 @@ PRO map_plane, fileTag, lStatus, gLong, interv, nSpec
         IF dishStatus NE 0 THEN print, az, alt
         result = leuschner_rx(filename, nSpec, k, 0, 'ga') ; grab spectra
         j+=1                                               ; increment filename
+        print, k
     ENDFOR
 END
         
