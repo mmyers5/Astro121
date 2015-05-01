@@ -1,7 +1,0 @@
-upper sideband test used mixer at 614.6MHz
-line was in 1.20599
-lower sideband test should set mixer at 615.810
-line will be in -1.20599
-declination: 23.45*sin( (julday+284)*(360/365))
-hour angle = 15*(12-hour of  the day in 24hr timescale)
-GMST + longitude = LMST
