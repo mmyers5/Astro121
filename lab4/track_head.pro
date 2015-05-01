@@ -39,16 +39,26 @@ PRO map_plane, fileTag, lStatus, gLong, interv, nSpec
       gLong[0], gLong[1], nSpec                ; including header information
     close, 1                                   ; close file
     FOR k=gLong[0], gLong[1], interv DO BEGIN
+        get_lun, u                             ; get free file unit number
+        openw, u,'./data/'+fileTag+'_'+lStatus+'.log', /append ; re-open file
         i=k                                    ; variable to store place in loop
         sj = STRING(j, FORMAT='(I03)')         ; string-ify filetag count
         filename='./data/'+fileTag+'_'+sj+'_'+lStatus+'.fits'  
                           ; filename takes form of 'fileTag_000_on.fits'
+<<<<<<< HEAD
         raDec = gal_raDec(i, 0.)               ; (l,b)->(ra,dec) in degrees
         ra = raDec[0]                                      ; unpack ra
         dec = raDec[1]                                     ; unpack dec
         openw, 1,'./data/'+fileTag+'_'+lStatus+'.log', /append ; re-open file
         printf, 1, j, ra, dec, systime(/julian, /utc)      ; store info for dopp
         close, 1                                           ; close just in case
+=======
+        raDec = gal_raDec(k, 0.)               ; (l,b)->(ra,dec) in degrees
+        ra = raDec[0]                                      ; unpack ra
+        dec = raDec[1]                                     ; unpack dec
+        printf, u, j, ra, dec, systime(/julian, /utc)      ; store info for dopp
+        close, u                                           ; close just in case
+>>>>>>> 4341da47d126815d5b0002d9ace2906830192fc6
         azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))  ; (ra,dec)->(az,alt)
         az=azAlt[0]                                        ; unpack az
         alt=azAlt[1]                                       ; unpack alt
