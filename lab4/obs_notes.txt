@@ -1,0 +1,21 @@
+started observation at 1:37 PM
+Able to observe [80,250] in intervals of 2, 10 spectra each
+diode is off
+lo frequence is 1270d6
+filetag is 042915_alpha, starts at file 40
+and at file 125
+files from 115-125 are dud
+
+started observation at 2:07PM
+Able to observer [80,250] in intervals of 2, 10 spectra each
+diode is off
+lo frequency is 1270d6
+filetag is 042915_beta, starts at file 40
+end at file 125
+
+started observation at 3:57PM
+observed [230,250] in intervals of 2, 20 spectra each
+diode is off
+lo freuqnecy is 1270d6
+filetag is 042915_gamma, starts at file 115
+end at file 125
