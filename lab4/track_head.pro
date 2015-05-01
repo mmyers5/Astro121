@@ -39,24 +39,24 @@ PRO map_plane, fileTag, lStatus, gLong, interv, nSpec
       gLong[0], gLong[1], nSpec                ; including header information
     close, 1                                   ; close file
     FOR k=gLong[0], gLong[1], interv DO BEGIN
-        get_lun, u                             ; get free file unit number
-        openw, u,'./data/'+fileTag+'_'+lStatus+'.log', /append ; re-open file
         i=k                                    ; variable to store place in loop
         sj = STRING(j, FORMAT='(I03)')         ; string-ify filetag count
         filename='./data/'+fileTag+'_'+sj+'_'+lStatus+'.fits'  
                           ; filename takes form of 'fileTag_000_on.fits'
-        raDec = gal_raDec(k, 0.)               ; (l,b)->(ra,dec) in degrees
+        raDec = gal_raDec(i, 0.)               ; (l,b)->(ra,dec) in degrees
         ra = raDec[0]                                      ; unpack ra
         dec = raDec[1]                                     ; unpack dec
-        printf, u, j, ra, dec, systime(/julian, /utc)      ; store info for dopp
-        close, u                                           ; close just in case
+        openw, 1,'./data/'+fileTag+'_'+lStatus+'.log', /append ; re-open file
+        printf, 1, j, ra, dec, systime(/julian, /utc)      ; store info for dopp
+        close, 1                                           ; close just in case
         azAlt=raDec_azAlt(ra,dec, systime(/julian, /utc))  ; (ra,dec)->(az,alt)
         az=azAlt[0]                                        ; unpack az
         alt=azAlt[1]                                       ; unpack alt
         IF az LT 0 THEN az+=360                            ; be positive
         dishStatus=pointdish(az=az, alt=alt)               ; point dish
         print, '!!!DISH STATUS!!!', dishStatus             ; good if prints 0
-        result = leuschner_rx(filename, nSpec, i, 0, 'ga') ; grab spectra
+        IF dishStatus NE 0 THEN print, az, alt
+        result = leuschner_rx(filename, nSpec, k, 0, 'ga') ; grab spectra
         j+=1                                               ; increment filename
     ENDFOR
 END
