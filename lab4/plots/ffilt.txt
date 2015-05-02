@@ -1,0 +1,3 @@
+x-value: 1420.5405
+y-value: 0.0001798429
+not doppler corrected
