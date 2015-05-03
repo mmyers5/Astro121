@@ -108,7 +108,7 @@ PRO see_plot, filArr, waitTime, xx
   ENDFOR
 END
 
-FUNCTION find_edges, filArr, doppFreq, sampFreq, xx=xx, yy=yy, xy=xy
+FUNCTION find_edges, filArr, doppFreq, sampFreq, poi, xx=xx, yy=yy, xy=xy
 ;+
 ; OVERVIEW
 ; --------
@@ -155,21 +155,23 @@ FUNCTION find_edges, filArr, doppFreq, sampFreq, xx=xx, yy=yy, xy=xy
   skyfreq = (findgen(n)*12.d6/n)+(150.d6)+1270.d6-6.d6      ; unshifted sky freq
   skyfreq /= (1.d6)                                         ; get freq in MHz
   doppFreq /= (1.d6)
-  edges = []                                                ; empty array
+  edges = make_array(poi,126)                               ; empty array
   FOR i=0, nFile-1 DO BEGIN
     fixFreq = skyfreq-doppFreq[i]                           ; shifted freq axis
     fixvel = (-(fixFreq-1420.4)*3.d8/1420.4)/(1.d3)         ; velo axis, km/s
     plot,fixvel, filArr[*,i],$                              ; plot stuff
       title='File Number'+string(i), ytitle='Temp (K)', xtitle='Velocity (km/s)',$
       /xstyle, xrange=[-200,600]
-    trc, xx, yy, /accum                                     ; call trc
+    trc, x, y, /accum                                     ; call trc
+    help, y
     IF KEYWORD_SET(xx) THEN BEGIN
-      edges = [[edges],[xx]]                                ; store only x
-    ENDIF ELSE IF KEYWORD_SET(yy) THEN BEGIN
-      print, 'yes'
-      edges = [[edges],[yy]]                                ; store only y
-    ENDIF ELSE IF KEYWORD_SET(xy) THEN BEGIN
-      edges = [[edges],[xx],[yy]]                           ; store x and y
+      edges[*,i]=x                             ; store only x
+    ENDIF 
+    IF KEYWORD_SET(yy) THEN BEGIN
+      edges[*,i]=y                                ; store only y
+    ENDIF 
+    IF KEYWORD_SET(xy) THEN BEGIN
+      edges[*,i]=[x,y]                           ; store x and y
     ENDIF
   ENDFOR
   return, edges 

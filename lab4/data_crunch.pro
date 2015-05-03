@@ -6,7 +6,7 @@ FUNCTION rot_curve, maxVels, err=errVels
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; result=rot_curve(maxVels)
+; result=rot_curve(maxVels, err=errVels)
 ;
 ; PARAMETERS
 ; ----------
