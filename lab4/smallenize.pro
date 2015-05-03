@@ -22,7 +22,7 @@ PRO brita, filArr, x0, lazy=lazy
 ; auto: set if you're lazy and want to use values that I THINK should work...
 ;-
   nRow = (size(filArr))[2]                  ; the number of rows
-  IF KEYWORD_SET(lazy) then x0=[100,8000]   ; what my value of x0 is
+  IF KEYWORD_SET(lazy) then x0=[500,6000]   ; what my value of x0 is
   fftSpec = fft(filArr)                     ; take fourier transform
   fftSpec[x0[0]:x0[1],*] = 0.               ; zero out noise
   filArr = fft(fftSpec, /inverse)           ; inverse transform
@@ -48,9 +48,9 @@ PRO dopp_spec, logFile, loFreq, velo, doppFreq
 ; OUTPUTS
 ; -------
 ; velo: list
-;     the array of the doppler velocities
+;     the array of the doppler velocities in km/s
 ; doppFreq: list
-;     the doppler shifted frequencies for the files specified by logfile
+;     the doppler shifted frequencies in Hz
 ;-
   hFreq=1420.4d6 ; frequency of HI line in Hz
   N=8192 ; get number of elements per spectrum
@@ -60,16 +60,13 @@ PRO dopp_spec, logFile, loFreq, velo, doppFreq
                                        ; (ra,dec) in degrees in 2000 equinox
                                        ; jDay is normal
   c=3.e8
-  ra=logFile[*,0]
-  dec=logFile[*,1]
-  jDay=findgen(41)*0+julday(4,28,2015,15,0,0)
   ra*=(24./360) ; convert ra to decimal hours
   velo=(ugdoppler(ra, dec, jDay, nlat =37.8732, wlong=122.2573))[3,*] ; DOPP-IT!
                                                                  ; units km/s
   doppFreq=-(hFreq)*(velo*10^3)/(c)
 END
 
-FUNCTION map_spec, fileTag, nFiles, nSpectra
+FUNCTION map_spec, fileTag, startFile, endFile, nSpectra
 ;+
 ; OVERVIEW
 ; --------
@@ -87,7 +84,6 @@ FUNCTION map_spec, fileTag, nFiles, nSpectra
 ;     assumes that the data files are in ./data, is the fits file for spec
 ;     incremented up to three digits of precision, i.e. 'fileTag_001', where
 ;     line status is contained in fileTag
-;     if for some reason not starting from file 000, do special sheisse
 ; nFiles: integer
 ;     the number of files you got
 ; nSpectra
@@ -99,16 +95,18 @@ FUNCTION map_spec, fileTag, nFiles, nSpectra
 ;     array containing smoothed and calibrated spectra of each file
 ;     each row is a file
 ;-
-  N = 8192
-  filArr = make_array(N, nFiles) ; holds spectra for each file
-                                 ; each row is a file
-  FOR i=0, nFiles-1 DO BEGIN
+  N = 8192                      ; number of spectra per file
+  nFile = endFile-startFile     ; number of actual files
+  filArr = make_array(N, nFile+1) ; holds spectra for each file
+                                ; each row is a file
+  p = 0                         ; force index
+  FOR i=startFile, endFile DO BEGIN
     j = STRING(i, FORMAT='(I03)') ; get increment value
-    fileTagx = './data/'+filetag
     fileTagx = './data/'+fileTag+'_'+j ; for passing into channel_sort
-    filArr[*,i] = channel_sort(fileTagx, nSpectra) ; get spectrum in file
+    filArr[*,p] = channel_sort(fileTagx, nSpectra) ; get spectrum in file
+    p+=1                          ; end index
   ENDFOR
-RETURN, filArr
+  RETURN, filArr
 END
 
 FUNCTION channel_sort, fileTagx, nSpectra
@@ -142,13 +140,9 @@ FUNCTION channel_sort, fileTagx, nSpectra
                                     ; each row is an extension
   extArr1 = make_array(N, nSpectra)
   onFil = fileTagx+'_on.fits' ; for on spectra
-  ;offFil = fileTagx+'_off.fits' ; for off spectra
   FOR k=1, nSpectra DO BEGIN ; loop through extensions
     print, onFil
     onSpec = mrdfits(onFil,k)    ; unpack ext on
-    ;offSpec = mrdfits(offFil,k) ; unpack ext off
-    ;extArr0[*,k-1] = calib(onSpec.auto0_real, offSpec.auto0_real) ; calibrate
-    ;extArr1[*,k-1] = calib(onSpec.auto1_real, offSpec.auto1_real) ; and store
     extArr0[*,k-1] = calib(onSpec.auto0_real, 0) ; since we didn't take offlines
     extArr1[*,k-1] = calib(onSpec.auto1_real, 0)
   ENDFOR
