@@ -22,26 +22,26 @@ PRO find_waldo, filArr,gaussArr
   HIdomain = [3000,5000]                            ; where HI line kind of is
   nRow = (size(filArr))[2]                          ; row count
   gaussArr = []
-  FOR i=20, nRow-1 DO BEGIN
+  FOR i=40, nRow-1 DO BEGIN
     plot, filArr[*,i], title=string(i), xrange=HIdomain
     nl = string(10B)
-    PRINT, 'Click 1: Start of all HI Line (x)'+nl,$
-           'Click 2: End of all HI Line (x)'+nl,$
-           'Click 3: Peak of first HI Line (x&y)'+nl,$
-           'Click 4: Peak of second HI Line (x&y)'+nl,$
-           'Click 5: Halfwidth Start of First HI Line (x)'+nl,$
-           'Click 6: Halfwidth End of First HI Line (x)'+nl,$
-           'Click 7: Halfwidth Start of Second HI Line (x)'+nl,$
-           'Click 8: Halfwidth End of Second HI Line (x)'
+    PRINT, 'Click 0: Start of all HI Line (x)'+nl,$
+           'Click 1: End of all HI Line (x)'+nl,$
+           'Click 2: Peak of first HI Line (x&y)'+nl,$
+           'Click 3: Peak of second HI Line (x&y)'+nl,$
+           'Click 4: Halfwidth Start of First HI Line (x)'+nl,$
+           'Click 5: Halfwidth End of First HI Line (x)'+nl,$
+           'Click 6: Halfwidth Start of Second HI Line (x)'+nl,$
+           'Click 7: Halfwidth End of Second HI Line (x)'
     trc, xx, yy, /accum                             ; ask for guesses
-    xData = dindgen(fix(xx[1]-xx[0]))+fix(xx[1])  ; get x-domain
-    tData = filArr[xData,i]                         ; get y-values
+    xData = dindgen(fix(xx[1]-xx[0]))+fix(xx[0])  ; get x-domain
+    tData = filArr[[xData],i]                         ; get y-values
     hgt0 = [yy[2],yy[3]]                            ; get peaks
     cen0 = [xx[2],xx[3]]                            ; get centers
     wid0 = [xx[5]-xx[4],xx[7]-xx[6]]                ; get widths
-    gfit, -1, xData, tData, 0.08, hgt0, cen0, wid0,$
-      tfit, sigma, zro1, hgt1, cen1, wid1
-    oplot, tfit
+    gfit, -1, xData, tData, 0., hgt0, cen0, wid0,$
+      tfit, sigma, zro1, hgt1, cen1, wid1, nloopmax=100
+    oplot, tfit, color=!green
     STOP
     gaussArr = [[gaussArr],[tfit]]
     STOP
@@ -69,7 +69,7 @@ PRO find_line, filArr
 ;     the spectra originally passed in but corrected with proper line
 ;-
   nRow = (size(filArr))[2]                   ; row count
-  fatD = 500.                                ; 'size' of HI line
+  fatD = 400.                                ; 'size' of HI line
   dom = [3000,5000]                          ; area of interest
   FOR i=0, nRow-1 DO BEGIN
     peakY = max(filArr[dom[0]:dom[1],i])                  ; find peak of line
@@ -157,15 +157,16 @@ FUNCTION find_edges, filArr, doppFreq, sampFreq, xx=xx, yy=yy, xy=xy
   doppFreq /= (1.d6)
   edges = []                                                ; empty array
   FOR i=0, nFile-1 DO BEGIN
-    fixFreq = skyfreq-doppFreq[i]                            ; shifted freq axis
+    fixFreq = skyfreq-doppFreq[i]                           ; shifted freq axis
     fixvel = (-(fixFreq-1420.4)*3.d8/1420.4)/(1.d3)         ; velo axis, km/s
     plot,fixvel, filArr[*,i],$                              ; plot stuff
       title='File Number'+string(i), ytitle='Temp (K)', xtitle='Velocity (km/s)',$
-      /xstyle, xrange=[-100,500]
-    trc, xx, yy                                             ; call trc
+      /xstyle, xrange=[-200,600]
+    trc, xx, yy, /accum                                     ; call trc
     IF KEYWORD_SET(xx) THEN BEGIN
       edges = [[edges],[xx]]                                ; store only x
     ENDIF ELSE IF KEYWORD_SET(yy) THEN BEGIN
+      print, 'yes'
       edges = [[edges],[yy]]                                ; store only y
     ENDIF ELSE IF KEYWORD_SET(xy) THEN BEGIN
       edges = [[edges],[xx],[yy]]                           ; store x and y

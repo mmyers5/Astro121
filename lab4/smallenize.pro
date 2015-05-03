@@ -55,10 +55,13 @@ PRO dopp_spec, logFile, loFreq, velo, doppFreq
   hFreq=1420.4d6 ; frequency of HI line in Hz
   N=8192 ; get number of elements per spectrum
   sampFreq=24d6 ; sampling frequency
-  readcol, logFile, j, ra, dec, jDay,$ ; read logfile, j is number of file
-    format='IFFD'                      ; integer, float, float, double
+  ;readcol, logFile, j, ra, dec, jDay,$ ; read logfile, j is number of file
+  ;  format='IFFD'                      ; integer, float, float, double
                                        ; (ra,dec) in degrees in 2000 equinox
                                        ; jDay is normal
+  ra=logFile[*,0]
+  dec = logFile[*,1]
+  jDay = logFile[*,2]
   c=3.e8
   ra*=(24./360) ; convert ra to decimal hours
   velo=(ugdoppler(ra, dec, jDay, nlat =37.8732, wlong=122.2573))[3,*] ; DOPP-IT!
