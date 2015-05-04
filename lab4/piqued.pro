@@ -1,50 +1,163 @@
-PRO find_waldo, filArr,gaussArr
-;
+PRO get_delV_tA, gauss, delV, tA, cen
+;+
 ; OVERVIEW
 ; --------
-; will let you do gaussian fitting for every curve in filArr. will prompt for
-; guesses, DOESN'T WORK!!
+; will get relevent delV from array
 ;
 ; CALLING SEQUENCE
 ; ----------------
-; find_waldo, filArr, HIdomain, gaussArr
+; get_delV_tA, gauss, delV, tA, cen
 ;
 ; PARAMETERS
 ; ----------
-; filArr: list
-;     the spectra to look at, presumably already lined
+; gauss: struct
+;     the structure from unpack_gauss
 ;
 ; OUTPUTS
 ; -------
-; gaussArr: list
-;     the gaussian fits for the spectra, each row is a spectrum
+; delV: list
+;     the dispersion from the maximum velocity shifted things in km/s
+; tA: list
+;     the heights of the peaks of the shifted things
 ;-
-  HIdomain = [3000,5000]                            ; where HI line kind of is
-  nRow = (size(filArr))[2]                          ; row count
-  gaussArr = []
-  FOR i=40, nRow-1 DO BEGIN
-    plot, filArr[*,i], title=string(i), xrange=HIdomain
-    nl = string(10B)
-    PRINT, 'Click 0: Start of all HI Line (x)'+nl,$
-           'Click 1: End of all HI Line (x)'+nl,$
-           'Click 2: Peak of first HI Line (x&y)'+nl,$
-           'Click 3: Peak of second HI Line (x&y)'+nl,$
-           'Click 4: Halfwidth Start of First HI Line (x)'+nl,$
-           'Click 5: Halfwidth End of First HI Line (x)'+nl,$
-           'Click 6: Halfwidth Start of Second HI Line (x)'+nl,$
-           'Click 7: Halfwidth End of Second HI Line (x)'
-    trc, xx, yy, /accum                             ; ask for guesses
-    xData = dindgen(fix(xx[1]-xx[0]))+fix(xx[0])    ; get x-domain
-    tData = filArr[[xData],i]                       ; get y-values
-    hgt0 = [yy[2],yy[3]]                            ; get peaks
-    cen0 = [xx[2],xx[3]]                            ; get centers
-    wid0 = [xx[5]-xx[4],xx[7]-xx[6]]                ; get widths
-    gfit, -1, xData, tData, 0., hgt0, cen0, wid0,$
-      tfit, sigma, zro1, hgt1, cen1, wid1
-    oplot, tfit, color=!green
-    STOP
-    gaussArr = [[gaussArr],[tfit]]
-    STOP
+  velos = gauss.wid
+  tAs = gauss.hgt
+  cens = gauss.cen
+  nRow = (size(velos))[2]
+  delV = make_array(nRow)
+  tA = make_array(nRow)
+  cen = make_array(nRow)
+  FOR i = 0, nRow-1 DO BEGIN
+    IF velos[2,i] NE 0. THEN BEGIN
+      delV[i]=velos[2,i]
+      tA[i]=tAs[2,i]
+      cen[i]=cens[2,i]
+    ENDIF ELSE IF velos[1,i] NE 0. THEN BEGIN
+      delV[i]=velos[1,i]
+      tA[i]=tAs[1,i]
+      cen[i]=cens[1,i]
+    ENDIF ELSE BEGIN
+      delV[i]=velos[0,i] 
+      tA[i]=tAs[0,i]
+      cen[i]=cens[0,i]
+    ENDELSE
+  ENDFOR
+  metric = 0.30938688           ; length of one tick in velo space in km/s
+  delv*=metric
+END 
+
+FUNCTION unpack_gauss, fileTag, nFiles
+;+
+; OVERVIEW
+; --------
+; will unpack the hgt cen and wid info from savefiles
+;
+; CALLING SEQUENCE
+; ----------------
+; result = unpack_gauss(fileTag, nFiles)
+;
+; PARAMETERS
+; ----------
+; fileTag: list
+;     the filetag names of the files you done saved
+; nFiles: integer
+;    the number of files that you want to look at
+;
+; OUTPUTS
+; -------
+; gauss: struct
+;     the array that stores hgt, cen, and wid in columns. tags are hgt, cen, wid
+;-
+  hgt = make_array(3, nFiles)
+  cen = make_array(3, nFiles)
+  wid = make_array(3, nFiles)
+  FOR i = 0, nFiles-1 DO BEGIN
+    j = string(i, format='(I03)')                   ; string-ify
+    filename = './'+fileTag+'_'+j+'_.sav'           ; get filename
+    restore, filename                               ; restore it
+    k=n_elements(hgt1)-1                             ; get element number
+    hgt[0:k,i] = hgt1                               ; magic
+    cen[0:k,i] = cen1
+    wid[0:k,i] = wid1 
+  ENDFOR
+  gauss = {hgt:hgt, cen:cen, wid:wid}
+  RETURN, gauss
+END
+
+PRO find_waldo, specArr, hgtArr, cenArr, widArr
+;+
+; OVERVIEW
+; --------
+; will let you fit up to three gaussians to data
+;
+; CALLING SEQUENCE
+; ----------------
+; find_waldo, specArr, gFitted
+;
+; PARAMETERS
+; ----------
+; specArr: list
+;     the list of spectra, each row is a new file
+;
+; OUTPUTS
+; -------
+; hgtArr: list
+;     array of heights, each column corresponds to a curve
+; cenArr: list
+;     same as hgtarr but for centers
+; widArr: list
+;     same as hftarr but for widths
+;-
+  nRow = (size(specArr))[2]                     ; number of rows
+  FOR i=0, nRow-1 DO BEGIN
+    plot, specArr[*,i], title=string(i), xrange=[3000,5000]
+    read, 'How many curves do you want to fit? ', num
+    PRINT, 'Get peaks (x and y)'
+    trc, cen0, hgt0 & wait, 0.2                            ; store cen and hgt
+    PRINT, 'Where is all this data? left and right (x) '
+    trc, xx, /accumulate & wait, 0.2                       ; get domain
+    xData = findgen( fix(abs(xx[1]-xx[0])) ) + xx[0]
+    tData = specArr[[xData],i]                             ; get data in domain
+    IF num EQ 1 THEN BEGIN
+      PRINT, 'Get left and right edge, half-width (x)'
+      trc, wid, /accumulate & wait, 0.2                    ; half width
+      wid0 = abs(wid[1]-wid[0])
+    ENDIF
+    IF num EQ 2 THEN BEGIN
+      PRINT, 'Get left and right edge, half-width (x)'
+      trc, wid, /accumulate & wait, 0.2                    ; half width
+      wid0 = [abs(wid[1]-wid[0]), abs(wid[3]-wid[2])]
+    ENDIF
+    IF num EQ 3 THEN BEGIN
+      PRINT, 'Get left and right edge, half-width (x)'
+      trc, wid, /accumulate & wait, 0.2                    ; half width
+      wid0 = [abs(wid[1]-wid[0]), abs(wid[3]-wid[2]), abs(wid[5]-wid[4])]
+    ENDIF
+    gfit, -1, xData, tData, 0., hgt0, cen0, wid0,$         ; gaussian fit
+      tfit, sigma, zro1, hgt1, cen1, wid1,$
+      sigzro1, sighgt1, sigcen1, sigwid1, cov
+    oplot, xData, tfit, color=!green                       ; for check
+    read, 'Hit 1 if you want to keep going ', q            ; like it?
+    IF q NE 1 THEN BEGIN
+      i-=1
+      CONTINUE
+    ENDIF
+  save, xData, tData, hgt1, cen1, wid1,$                  ; save stuff
+    sigma, sigzro1, sighgt1, sigcen1, sigwid1, cov,$
+    filename='gaussian2_'+string(i, format='(I03)')+'_.sav'
+  ENDFOR
+END
+    
+PRO find_fixvel, doppFreq, fixvelArr
+  N = 8192.
+  skyfreq = (findgen(n)*12.d6/n)+(150.d6)+1270.d6-6.d6      ; unshifted sky freq
+  skyfreq /= (1.d6)                                         ; get freq in MHz
+  doppFreq /= (1.d6)
+  fixvelArr = []
+  FOR i = 0, 125 DO BEGIN
+    fixFreq = skyFreq-doppFreq[i]                           ; shifted freq axis
+    fixvel = (-(fixFreq-1420.4)*3.d8/1420.4)/(1.d3)         ; velo axis, km/s
+    fixvelArr = [[fixvelArr],[fixvel]]
   ENDFOR
 END
 
@@ -72,11 +185,12 @@ PRO find_line, filArr
   fatD = 400.                                ; 'size' of HI line
   dom = [3000,5000]                          ; area of interest
   FOR i=0, nRow-1 DO BEGIN
-    peakY = max(filArr[dom[0]:dom[1],i])                  ; find peak of line
-    peakX = (where(filArr[dom[0]:dom[1],i] EQ peakY))[0]  ; find peak x vlaue
-    cfx0=(findgen(200))+peakX-(fatD/2.)-200.              ; make arrays
-    cfx1=(findgen(200))+peakX+(fatD/3.)
-    cfx = [cfx0,cfx1]                                     ; complete set of x                        
+    plot, filArr[*,i], title=string(i), xrange=[3500,5000]
+    trc, xx, /accum
+    wait,0.1
+    lowSide = findgen(100)+xx[0]-100
+    highSide = findgen(100)+xx[1]
+    cfx = [lowSide,highSide]                 ; complete set of x                        
     cfy = filArr[cfx,i]                                   ; complete set of y
     polyfit, cfx, cfy, 1, lineArr                         ; perform fit
     line = lineArr[0] + (findgen(8192)*lineArr[1])        ; eqn of line per row
@@ -155,7 +269,7 @@ FUNCTION find_edges, filArr, doppFreq, sampFreq, poi, xx=xx, yy=yy, xy=xy
   skyfreq = (findgen(n)*12.d6/n)+(150.d6)+1270.d6-6.d6      ; unshifted sky freq
   skyfreq /= (1.d6)                                         ; get freq in MHz
   doppFreq /= (1.d6)
-  edges = make_array(poi,125)                               ; empty array
+  edges = make_array(poi,126)                               ; empty array
   FOR i=0, nFile-1 DO BEGIN
     fixFreq = skyfreq-doppFreq[i]                           ; shifted freq axis
     fixvel = (-(fixFreq-1420.4)*3.d8/1420.4)/(1.d3)         ; velo axis, km/s

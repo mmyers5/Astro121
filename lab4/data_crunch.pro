@@ -1,4 +1,4 @@
-FUNCTION gas_mass, delV, r, gLong
+FUNCTION gas_mass, delV, tA, r
 ;+
 ; OVERVIEW
 ; --------
@@ -23,14 +23,14 @@ FUNCTION gas_mass, delV, r, gLong
 ; gmass: list
 ;     the gas mass seen per provided longitude in kg. hint: sum-thing
 ;-
-  l = findgen(45)*2*!dtor                         ; get 0<l<90 in radians
+  l = findgen(126)*2.*!dtor                       ; get 0<l<90 in radians
   d = 8.5*cos(l)*3.08567758d21                    ; get distance from sun in cm
   mH = 1.6605402d-24                              ; mass of hydrogen in g
-  tA = 100.                                       ; brightness temp in K
-  bwidth = 3*!dtor                                ; beam width in radians
-  delVm *= 1.d5                                   ; velocities in cm/s
-  gmass = 1.8d18*delVm*(d^2)*mH*tA*bwidth         ; get gmass in grams
+  bwidth = (21.)^2/(!pi*(370.^2))                 ; beam width in rad
+  delVcm = delV*1.d5                              ; velocities in cm/s
+  gmass = 1.8d18*delVcm*(d^2)*mH*tA*bwidth        ; get gmass in grams
   gmass /= 1.d3                                   ; get gmass in kilograms
+  gmass /= 1.989d30                               ; get mass in Msun
   RETURN, gmass
 END
 
@@ -101,7 +101,7 @@ FUNCTION rot_curve, maxVels, err=errVels
 ;-
   rsun = 8.5                  ; distance of sun from GC in kpc
   vsun = 220                  ; circular velocity of sun in km/s
-  l = (findgen(45)*2.+0.001)*!dtor    ; the longitudinal coordinates
+  l = (findgen(126)*2.+0.0001)*!dtor    ; the longitudinal coordinates
   r = rsun*sin(l)             ; estimated distances for maxvels
   velo = ((maxVels/r)+(vsun/rsun))*r     ; equation chuggernaut
   plot, r, velo, title='Rotation Curve of Galaxy for 0<l<90',$
