@@ -1,4 +1,4 @@
-PRO brita, filArr, x0, lazy=lazy
+PRO brita, filArr, filtArr
 ;+
 ; OVERVIEW
 ; --------
@@ -22,10 +22,20 @@ PRO brita, filArr, x0, lazy=lazy
 ; auto: set if you're lazy and want to use values that I THINK should work...
 ;-
   nRow = (size(filArr))[2]                  ; the number of rows
-  IF KEYWORD_SET(lazy) then x0=[500,6000]   ; what my value of x0 is
-  fftSpec = fft(filArr)                     ; take fourier transform
-  fftSpec[x0[0]:x0[1],*] = 0.               ; zero out noise
-  filArr = fft(fftSpec, /inverse)           ; inverse transform
+  x0 = [4400,-1]
+  x1 = [0,3300]
+  filtArr = make_array(8192, nRow)
+  FOR i =0, nRow-1 DO BEGIN
+    fftSpec = fft(filArr[*,i],/center)                     ; take fourier transform
+    cSpec = imaginary(fftSpec)
+    rSpec = real_part(fftSpec)
+    cSpec[x0[0]:x0[1]] = 0.
+    rSpec[x0[0]:x0[1]] = 0.
+    cSpec[x1[0]:x1[1]] = 0.
+    rSpec[x1[0]:x1[1]] = 0.
+    tArr = complex(rSpec, cSpec, /double)
+    filtArr[*,i] = real_part(fft(tArr, /center, /inverse))
+  ENDFOR
 END 
 
 PRO dopp_spec, logFile, loFreq, velo, doppFreq
@@ -175,11 +185,11 @@ FUNCTION calib, onSpec, offSpec
 ; calSpec: list
 ;     the final calibrated spectrum
 ;-
-  coldSpec = (mrdfits('./data/coldSpec.fits', 1)).auto0_real ; spec of cold
-  hotSPec = (mrdfits('./data/hotSpec.fits', 1)).auto0_real   ; spec of hot
+  coldSpec = (mrdfits('./data/coldSpec.fits', 1)).auto1_real ; spec of cold
+  hotSPec = (mrdfits('./data/hotSpec.fits', 1)).auto1_real   ; spec of hot
   ;ratio = onSpec/offSpec ; get shape of line
   ratio = onSpec
-  Tsys = (total(coldSpec)/total(hotSpec-coldSpec)) * 20 ; sys temperature
+  Tsys = (total(coldSpec)/total(hotSpec-coldSpec)) * 1.d5 ; sys temperature
   calSpec = ratio*Tsys ; final calibrated spectrum
   RETURN, calSpec
 END

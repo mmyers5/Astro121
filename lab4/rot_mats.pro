@@ -32,9 +32,9 @@ FUNCTION gal_raDec, gLong, gLat
                [cos(vec[*,1])*sin(vec[*,0])] ,$ ; operation gives vectorized form
                [              sin(vec[*,1])]  ] ; in each column such that each column
                                                 ; corresponds to a tuple of coordinates
-  rotMatrix = transpose([ [-0.054876,  0.494109, -0.867666],$ ; get rotation matrix
+  rotMatrix = [ [-0.054876,  0.494109, -0.867666],$ ; get rotation matrix
                 [-0.873437, -0.444830, -0.198076],$
-                [-0.483835,  0.746982,  0.455984] ]) 
+                [-0.483835,  0.746982,  0.455984] ] 
   raDec = rotMatrix ## gLongLat           ; rotate (l,b) -> (ra,dec)
                                           ; each column gets rotated 
   ra = atan(raDec[*,1], raDec[*,0])       ; unpack vectors

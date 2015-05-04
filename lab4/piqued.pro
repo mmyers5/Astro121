@@ -34,13 +34,13 @@ PRO find_waldo, filArr,gaussArr
            'Click 6: Halfwidth Start of Second HI Line (x)'+nl,$
            'Click 7: Halfwidth End of Second HI Line (x)'
     trc, xx, yy, /accum                             ; ask for guesses
-    xData = dindgen(fix(xx[1]-xx[0]))+fix(xx[0])  ; get x-domain
-    tData = filArr[[xData],i]                         ; get y-values
+    xData = dindgen(fix(xx[1]-xx[0]))+fix(xx[0])    ; get x-domain
+    tData = filArr[[xData],i]                       ; get y-values
     hgt0 = [yy[2],yy[3]]                            ; get peaks
     cen0 = [xx[2],xx[3]]                            ; get centers
     wid0 = [xx[5]-xx[4],xx[7]-xx[6]]                ; get widths
     gfit, -1, xData, tData, 0., hgt0, cen0, wid0,$
-      tfit, sigma, zro1, hgt1, cen1, wid1, nloopmax=100
+      tfit, sigma, zro1, hgt1, cen1, wid1
     oplot, tfit, color=!green
     STOP
     gaussArr = [[gaussArr],[tfit]]
@@ -74,8 +74,8 @@ PRO find_line, filArr
   FOR i=0, nRow-1 DO BEGIN
     peakY = max(filArr[dom[0]:dom[1],i])                  ; find peak of line
     peakX = (where(filArr[dom[0]:dom[1],i] EQ peakY))[0]  ; find peak x vlaue
-    cfx0=(findgen(100))+peakX-(fatD/2.)-100.              ; make arrays
-    cfx1=(findgen(100))+peakX+(fatD/2.)
+    cfx0=(findgen(200))+peakX-(fatD/2.)-200.              ; make arrays
+    cfx1=(findgen(200))+peakX+(fatD/3.)
     cfx = [cfx0,cfx1]                                     ; complete set of x                        
     cfy = filArr[cfx,i]                                   ; complete set of y
     polyfit, cfx, cfy, 1, lineArr                         ; perform fit
@@ -103,7 +103,7 @@ PRO see_plot, filArr, waitTime, xx
 ;-
   nRow = (size(filArr))[2]                         ; number of rows
   FOR i=0, nRow-1 DO BEGIN 
-    plot, filArr[*,i],title=string(i), yrange=[-0.05,0.15],xrange = [3000,5000] ; plot
+    plot, filArr[*,i],title=string(i),xrange = [3500,5000] ; plot
     wait, waitTime                                 ; wait
   ENDFOR
 END
@@ -155,23 +155,23 @@ FUNCTION find_edges, filArr, doppFreq, sampFreq, poi, xx=xx, yy=yy, xy=xy
   skyfreq = (findgen(n)*12.d6/n)+(150.d6)+1270.d6-6.d6      ; unshifted sky freq
   skyfreq /= (1.d6)                                         ; get freq in MHz
   doppFreq /= (1.d6)
-  edges = make_array(poi,126)                               ; empty array
+  edges = make_array(poi,125)                               ; empty array
   FOR i=0, nFile-1 DO BEGIN
     fixFreq = skyfreq-doppFreq[i]                           ; shifted freq axis
     fixvel = (-(fixFreq-1420.4)*3.d8/1420.4)/(1.d3)         ; velo axis, km/s
     plot,fixvel, filArr[*,i],$                              ; plot stuff
       title='File Number'+string(i), ytitle='Temp (K)', xtitle='Velocity (km/s)',$
       /xstyle, xrange=[-200,600]
-    trc, x, y, /accum                                     ; call trc
-    help, y
+    trc, x, y                                       ; call trc
+    wait, 0.1
     IF KEYWORD_SET(xx) THEN BEGIN
-      edges[*,i]=x                             ; store only x
+      edges[*,i]=x                                          ; store only x
     ENDIF 
     IF KEYWORD_SET(yy) THEN BEGIN
-      edges[*,i]=y                                ; store only y
+      edges[*,i]=y                                          ; store only y
     ENDIF 
     IF KEYWORD_SET(xy) THEN BEGIN
-      edges[*,i]=[x,y]                           ; store x and y
+      edges[*,i]=[x,y]                                      ; store x and y
     ENDIF
   ENDFOR
   return, edges 
