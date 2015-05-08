@@ -1,0 +1,50 @@
+xxx=[2927.8604   ,    4008.9415    ,   5090.0225    ,   5765.6982]
+abfline= float(abfline)
+
+ndx= [ xxx[0] + indgen(xxx[1]-xxx[0]), xxx[2] + indgen(xxx[3]-xxx[2])]
+yydata= abfline[ *,40]
+xxdata= findgen( 8192)
+
+xxf= xxdata[ndx]
+yyf= yydata[ndx]
+deg=5
+polyfit, xxf, yyf, deg, cfs, scfs, yfit
+yyfit= fltarr( 8192)
+for nd=0, deg do yyfit= yyfit + cfs[ nd]*xxdata^nd
+
+yycorr= yydata-yyfit
+
+plot, xxdata, yydata
+oplot, xxdata, yyfit, col=!red
+oplot, xxdata, yycorr, col=!green
+
+
+xx= xxdata[ xxx[0]:xxx[3]]
+xx=xx-4600
+tt= yycorr[ xxx[0]:xxx[3]]
+
+
+plot, xx, tt, xra=[-400,400]
+
+hgt0= [0.02, 0.005, 0.005, .002]
+cen0= [-140., 0.,130., 0.]
+wid0=[40., 40., 40., 250.]
+
+hgt0= [0.02, 0.005, 0.005]
+cen0= [-140., 0.,130.]
+wid0=[40., 40., 40.]
+
+;hgt0= [0.02, 0.005]
+;cen0= [-140., 130.]
+;wid0=[30.,  30]*2.
+
+zro0= 0.0
+gcurv, xx, 0.,hgt0,cen0,wid0,tg
+oplot,xx,tg,col=!green
+
+gfit, -1, xx, tt, zro0, hgt0, cen0, wid0, tfit, sigma, $
+      zro1, hgt1, cen1, wid1, nloopmax=1000, halfassed=0.2
+oplot, xx, tfit, col=!red
+
+
+end
